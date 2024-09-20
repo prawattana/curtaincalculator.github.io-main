@@ -1,0 +1,128 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #f0f8ff; /* สีพื้นหลังฟ้าอ่อน */
+}
+
+h1 {
+    color: #0066cc; /* สีฟ้าเข้มสำหรับหัวข้อ */
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #0066cc; /* สีฟ้าเข้มสำหรับข้อความ */
+}
+
+select, input {
+    width: 100%;
+    padding: 12px; /* เพิ่มขนาด Padding เพื่อให้ใช้งานง่ายขึ้น */
+    box-sizing: border-box;
+    border: 1px solid #0066cc; /* กรอบสีฟ้า */
+    border-radius: 5px;
+    font-size: 16px; /* ขนาดฟอนต์ใหญ่ขึ้น */
+}
+
+button {
+    padding: 15px;
+    font-size: 18px;
+    width: 100%;
+    background-color: #0066cc; /* ปุ่มสีฟ้า */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #005bb5; /* ปุ่มสีฟ้าเข้มเมื่อ hover */
+}
+
+.calculator {
+    margin-bottom: 30px;
+    border: 1px solid #0066cc;
+    padding: 25px;
+    border-radius: 10px;
+    background-color: white;
+}
+
+.dimensions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px; /* เพิ่มช่องว่างระหว่างฟอร์ม */
+}
+
+.dimensions .form-group {
+    flex: 1;
+    min-width: 220px; /* กำหนดขนาดขั้นต่ำให้กล่องไม่เล็กเกินไป */
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    select, input, button {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .calculator {
+        padding: 15px;
+    }
+}
+
+/* Tablet (iPad) */
+@media (min-width: 601px) and (max-width: 1024px) {
+    body {
+        padding: 15px;
+        font-size: 16px;
+    }
+
+    select, input, button {
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .calculator {
+        padding: 20px;
+    }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+    body {
+        padding: 20px;
+        font-size: 18px;
+    }
+
+    select, input, button {
+        padding: 15px;
+        font-size: 18px;
+    }
+
+    .calculator {
+        padding: 25px;
+    }
+}
+
+#summaryResult {
+        width: 100%; /* ให้เต็มความกว้าง */
+        height: 200px; /* ปรับความสูงตามที่ต้องการ */
+        padding: 12px; /* เพิ่ม Padding เพื่อให้ใช้งานสะดวก */
+        box-sizing: border-box;
+        font-size: 16px; /* ขนาดฟอนต์เหมาะสม */
+        border: 1px solid #0066cc; /* กรอบสีฟ้า */
+        border-radius: 5px;
+ }
