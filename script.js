@@ -981,6 +981,38 @@ function duplicateItem(srcId){
 }
 
 /*******************************
+ * COPY SUMMARY
+ *******************************/
+async function copySummary() {
+  const ta = document.getElementById('summaryResult');
+  if (!ta) { alert('ไม่พบกล่องสรุปรายการ'); return; }
+
+  const text = (ta.value || '').trim();
+  if (!text) { alert('ยังไม่มีรายการให้คัดลอก'); return; }
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_) {
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.style.position = 'fixed';
+    tmp.style.top = '-1000px';
+    document.body.appendChild(tmp);
+    tmp.focus();
+    tmp.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(tmp);
+  }
+
+  const btn = document.getElementById('copyBtn');
+  if (btn) {
+    const prev = btn.textContent;
+    btn.textContent = 'คัดลอกแล้ว ✓';
+    setTimeout(() => (btn.textContent = prev), 1200);
+  }
+}
+
+/*******************************
  * เริ่มทำงาน
  *******************************/
 window.addEventListener('DOMContentLoaded', async () => {
@@ -988,9 +1020,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadPrice();
     const btn = document.getElementById('addItemBtn');
     if (btn) btn.addEventListener('click', addItem);
+    const copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) copyBtn.addEventListener('click', copySummary);
     autoSummarize(true);
   } catch (e) {
     console.error(e);
     alert('โหลดข้อมูลไม่สำเร็จ');
   }
 });
+
