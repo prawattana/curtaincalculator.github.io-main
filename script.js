@@ -54,6 +54,31 @@ const toNum = (v, d=0) => {
   return isNaN(n) ? d : n;
 };
 
+// ปัดสำหรับ lookup ตารางมู่ลี่: ถ้าใส่ทศนิยม "สองตำแหน่ง" ให้ปัดที่หลักร้อย (2nd decimal)
+// 0-4 ลง, 5-9 ขึ้น -> ให้ได้ค่าเป็น "ทศนิยม 1 ตำแหน่ง"
+function lookupTenthByHundredths(rawStr) {
+  if (rawStr == null) return NaN;
+  const s = String(rawStr).trim();
+  if (!s) return NaN;
+  if (!s.includes('.')) return parseFloat(s);
+
+  const [intPart, decPartRaw=''] = s.split('.');
+  const decPart = decPartRaw.replace(/\D/g,''); // กัน user ใส่คอมมา/ตัวอักษร
+
+  if (decPart.length === 2) {
+    const tenth = parseInt(decPart[0] || '0', 10);     // หลักทศนิยมที่ 1
+    const hund  = parseInt(decPart[1] || '0', 10);     // หลักทศนิยมที่ 2
+    let val = parseFloat(`${intPart}.${tenth}`);
+    if (!isNaN(hund) && hund >= 5) val += 0.1;
+    // บีบให้ได้ step 0.1 แบบสวย ๆ
+    return Math.round(val * 10) / 10;
+  }
+
+  // กรณีอื่น ๆ ไม่บังคับปัด (ให้เป็นค่าที่ผู้ใช้ใส่มา)
+  return parseFloat(s);
+}
+
+
 // --- Auto summary (debounce) ---
 let _sumT = null;
 function autoSummarize(now = false){
@@ -251,21 +276,41 @@ function addItem(){
     </div>
     <div class="note">* ขนาดต้องตรงกับช่วงในตารางราคา</div>
   `;
-  function recalcAlu(){
-    const model = $(`#alu-model-${id}`).value; // KDN | KACEE
-    const w = toNum($(`#alu-w-${id}`).value);
-    const h = toNum($(`#alu-h-${id}`).value);
-    const q = Math.max(1, toNum($(`#alu-q-${id}`).value, 1));
-    if (!w || !h) { $(`#alu-price-${id}`).textContent=''; const st=items.get(id); st.kdn=0; st.kacee=0; return; }
-    const data = (model==='KDN') ? blindKDN : blindKACEE;
-    const key  = (model==='KDN') ? 'KDN_25mm' : 'KACEE_25_35_50mm';
-    const price = matrixPrice(data, key, w, h);
-    if (price == null) { $(`#alu-price-${id}`).textContent=''; const st=items.get(id); st.kdn=0; st.kacee=0; return; }
-    const total = price*q;
-    $(`#alu-price-${id}`).textContent = fmt(total) + ' บาท';
-    const st = items.get(id);
-    if (model==='KDN'){ st.kdn = total; st.kacee = 0; } else { st.kacee = total; st.kdn = 0; }
+ function recalcAlu(){
+  const model = $(`#alu-model-${id}`).value; // KDN | KACEE
+  const wStr = $(`#alu-w-${id}`).value;
+  const hStr = $(`#alu-h-${id}`).value;
+  const q = Math.max(1, toNum($(`#alu-q-${id}`).value, 1));
+
+  const wDisplay = toNum(wStr);
+  const hDisplay = toNum(hStr);
+  if (!wDisplay || !hDisplay) {
+    $(`#alu-price-${id}`).textContent='';
+    const st=items.get(id); st.kdn=0; st.kacee=0; 
+    return;
   }
+
+  // ใช้ rule ปัดเฉพาะตอน "เทียบราคาในตาราง"
+  const wLookup = lookupTenthByHundredths(wStr);
+  const hLookup = lookupTenthByHundredths(hStr);
+
+  const data = (model==='KDN') ? blindKDN : blindKACEE;
+  const key  = (model==='KDN') ? 'KDN_25mm' : 'KACEE_25_35_50mm';
+  const price = matrixPrice(data, key, wLookup, hLookup);
+
+  if (price == null) {
+    $(`#alu-price-${id}`).textContent='';
+    const st=items.get(id); st.kdn=0; st.kacee=0; 
+    return;
+  }
+
+  const total = price * q;
+  $(`#alu-price-${id}`).textContent = fmt(total) + ' บาท';
+
+  const st = items.get(id);
+  if (model==='KDN'){ st.kdn = total; st.kacee = 0; } else { st.kacee = total; st.kdn = 0; }
+}
+
   setTimeout(() => {
     bindAuto($(`#alu-model-${id}`), recalcAlu);
     bindAuto($(`#alu-w-${id}`),     recalcAlu);
