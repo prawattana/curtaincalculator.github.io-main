@@ -767,7 +767,7 @@ function summarizeAllItems(){
       const group = railAgg[det.label];
       const isGrouped = group && group.entries.length >= 2 && !cs.hasOpaque && !cs.hasSheer;
       if (!isGrouped) {
-        cardOut += `${det.label}\n${det.line}\n`;
+        cardOut += `${det.label} ${det.line}\n`;
         cardTotal += det.amt;
         blockCount++;
       }
