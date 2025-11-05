@@ -1,128 +1,211 @@
-body {
-    font-family: Arial, sans-serif;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    box-sizing: border-box;
-    background-color: #f0f8ff; /* สีพื้นหลังฟ้าอ่อน */
+:root{
+  --brand:#0d5bff;
+  --ink:#0b1b3a;
+  --line:#e5eeff;
+  --bg:#f7fbff;
 }
 
-h1 {
-    color: #0066cc; /* สีฟ้าเข้มสำหรับหัวข้อ */
-    text-align: center;
+*{box-sizing:border-box}
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  max-width:1080px;
+  margin:0 auto;
+  padding:24px 16px 60px;
 }
 
-.form-group {
-    margin-bottom: 15px;
+h1{
+  text-align:center;
+  color:var(--brand);
+  margin:8px 0 18px;
+  letter-spacing:.3px;
 }
 
-label {
-    display: block;
-    margin-bottom: 5px;
-    color: #0066cc; /* สีฟ้าเข้มสำหรับข้อความ */
+.calculator{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:18px;
+  margin:14px 0;
+  box-shadow:0 6px 18px rgba(13,91,255,.08);
 }
 
-select, input {
-    width: 100%;
-    padding: 12px; /* เพิ่มขนาด Padding เพื่อให้ใช้งานง่ายขึ้น */
-    box-sizing: border-box;
-    border: 1px solid #0066cc; /* กรอบสีฟ้า */
-    border-radius: 5px;
-    font-size: 16px; /* ขนาดฟอนต์ใหญ่ขึ้น */
+button{
+  appearance:none;border:0;cursor:pointer;
+  background:var(--brand);color:#fff;
+  padding:12px 16px;border-radius:10px;
+  font-weight:700;letter-spacing:.2px;
+}
+button:hover{filter:brightness(.95)}
+
+#addItemBtn{width:100%;font-size:18px}
+
+/* ===== Card ===== */
+.item-card{
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px 14px 14px;
+  margin:12px 0;
+  background:#fff;
+  box-shadow:0 6px 16px rgba(0,0,0,.05);
+}
+.item-head{
+  display:flex;align-items:center;gap:10px;
+  justify-content:center;margin-bottom:10px;
+}
+.item-delete{
+  position:absolute;top:8px;right:8px;
+  width:28px;height:28px;border-radius:8px;
+  background:#ff4d4f;font-weight:900;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.item-delete:hover{filter:brightness(.95)}
+
+select,input{
+  width:100%;padding:10px 12px;border-radius:10px;
+  border:1px solid #cfe0ff;font-size:14px;
 }
 
-button {
-    padding: 15px;
-    font-size: 18px;
-    width: 100%;
-    background-color: #0066cc; /* ปุ่มสีฟ้า */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+/* bullet rows */
+.bullet-list{list-style:none;margin:0;padding:0}
+.bullet-row{padding:10px 0;border-top:1px dashed var(--line)}
+.bullet-row:first-child{border-top:0}
+
+.bullet-right{
+  display:grid;
+  grid-template-columns:minmax(260px,1.6fr) 120px 100px auto auto;
+  gap:10px;align-items:end;
 }
 
-button:hover {
-    background-color: #005bb5; /* ปุ่มสีฟ้าเข้มเมื่อ hover */
+.bullet-right .form-group{margin:0}
+.bullet-right label{
+  display:block;margin:0 0 4px;font-size:12px;color:#4c6fff
 }
 
-.calculator {
-    margin-bottom: 30px;
-    border: 1px solid #0066cc;
-    padding: 25px;
-    border-radius: 10px;
-    background-color: white;
+.bullet-actions{
+  grid-column:4 / -1; display:flex; gap:8px;
+  align-items:center; justify-content:flex-end;
+}
+.bullet-actions button{padding:8px 12px;border-radius:8px;font-size:14px}
+
+.price-box{
+  padding:6px 10px;background:#f2f7ff;color:#1f4fff;
+  border:1px solid #dbe8ff;border-radius:999px;
+  font-weight:800;min-width:84px;text-align:center
 }
 
-.dimensions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px; /* เพิ่มช่องว่างระหว่างฟอร์ม */
+/* ความสูง + สรุปต่อการ์ด */
+.item-footer{
+  margin-top:12px;display:flex;gap:10px;align-items:center
+}
+.item-footer .grow{flex:1}
+
+.combo-full{width:100%;max-width:720px}
+
+/* summary */
+.summary-head{
+  display:flex;align-items:center;gap:12px;margin-bottom:8px
+}
+.cat-btn{width:68px;border-radius:10px;cursor:pointer}
+.cat-text{color:#4c6fff;font-weight:700}
+
+/* responsive */
+@media (max-width:760px){
+  .bullet-right{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+  .bullet-actions{
+    grid-column:1 / -1;justify-content:flex-start;margin-top:6px
+  }
+}
+#summaryResult{width:100%;border:1px solid #cfe0ff;border-radius:10px;padding:12px}
+
+/* กล่องสำหรับชนิดพิเศษ (มู่ลี่/ม่านพับ) */
+.alt-box{
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  margin-top: 6px;
+}
+.alt-row{
+  display: grid;
+  grid-template-columns: repeat(3,minmax(140px,1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+.alt-actions{
+  display:flex; gap:8px; align-items:center; justify-content:flex-end;
+}
+.check label{ display:flex; gap:8px; align-items:center; }
+.note{ font-size:12px; color:#6b7dbb; margin-top:4px; }
+
+.item-dup{
+  position:absolute;
+  top:8px;
+  right:44px;    /* ชิดซ้ายของปุ่มลบ */
+  width:26px;
+  height:26px;
+  line-height:24px;
+  border-radius:6px;
+  border:1px solid #ddd;
+  background:#fff;
+  font-size:14px;
+  color:#333;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.item-dup:hover{ background:#f7f7f7; }
+
+/* ซ่อนข้อความกำกับแมว แต่คงปุ่มแมวไว้ */
+.cat-text { 
+  display: none; 
 }
 
-.dimensions .form-group {
-    flex: 1;
-    min-width: 220px; /* กำหนดขนาดขั้นต่ำให้กล่องไม่เล็กเกินไป */
+.half-btn{
+  margin-left: .5rem;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.half-btn:hover{
+  background: #f2f4f7;
 }
 
-/* Mobile */
-@media (max-width: 600px) {
-    body {
-        padding: 10px;
-        font-size: 14px;
-    }
-
-    select, input, button {
-        padding: 10px;
-        font-size: 14px;
-    }
-
-    .calculator {
-        padding: 15px;
-    }
+/* ปุ่มเครื่องมือข้างอินพุต */
+.action-btn,
+.half-btn,
+.full-btn,
+.hook-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  margin-left: 8px;
 }
 
-/* Tablet (iPad) */
-@media (min-width: 601px) and (max-width: 1024px) {
-    body {
-        padding: 15px;
-        font-size: 16px;
-    }
-
-    select, input, button {
-        padding: 12px;
-        font-size: 16px;
-    }
-
-    .calculator {
-        padding: 20px;
-    }
+/* สีหลักให้ทั้งแยกกลาง/เดี่ยว */
+.half-btn,
+.full-btn {
+  background: #0d6efd;      /* ฟ้า */
+  color: #fff;              /* ตัวอักษรขาว */
 }
 
-/* Desktop */
-@media (min-width: 1025px) {
-    body {
-        padding: 20px;
-        font-size: 18px;
-    }
-
-    select, input, button {
-        padding: 15px;
-        font-size: 18px;
-    }
-
-    .calculator {
-        padding: 25px;
-    }
+.hook-btn {
+  background: #f1f5f9;      /* เทาอ่อน */
+  color: #0f172a;           /* น้ำเงินเข้ม */
+  border: 1px solid #cbd5e1;
 }
 
-#summaryResult {
-        width: 100%; /* ให้เต็มความกว้าง */
-        height: 200px; /* ปรับความสูงตามที่ต้องการ */
-        padding: 12px; /* เพิ่ม Padding เพื่อให้ใช้งานสะดวก */
-        box-sizing: border-box;
-        font-size: 16px; /* ขนาดฟอนต์เหมาะสม */
-        border: 1px solid #0066cc; /* กรอบสีฟ้า */
-        border-radius: 5px;
- }
+.half-btn:hover,
+.full-btn:hover {
+  filter: brightness(0.95);
+}
