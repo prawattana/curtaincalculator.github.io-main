@@ -4,34 +4,143 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Curtain Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Curtain Calculator</h1>
 
-  <!-- แถบหัว + ปุ่มเพิ่มรายการ -->
+  <header class="app-header">
+    <h1>Curtain <span>Calculator</span></h1>
+    <p class="tagline">v.2 Beta</p>
+    <div class="header-divider"></div>
+  </header>
+
   <div id="itemsHeader" class="calculator">
-    <button id="addItemBtn">+ เพิ่มรายการ</button>
+    <button id="addItemBtn">เพิ่มรายการ</button>
   </div>
 
-  <!-- โซนวางการ์ดที่ถูกเพิ่ม -->
   <div id="itemsContainer"></div>
 
-  <!-- สรุปทั้งหมด -->
   <div class="calculator" id="summaryBlock">
+    <!-- hidden — compat with script.js autoSummarize -->
     <div class="summary-head">
-      <img
-        src="https://media1.tenor.com/m/BT8I5b35oMQAAAAC/oatmeal-meme.gif"
-        alt="cat"
-        class="cat-btn"
-        onclick="summarizeAllItems()" />
-      <div class="cat-text">จิ้มแมวเพื่อประเมิน</div>
+      <img src="" alt="" class="cat-btn" onclick="summarizeAllItems()" />
+      <div class="cat-text"></div>
     </div>
-    <textarea id="summaryResult" rows="10" readonly></textarea>
-    <button id="copyBtn">คัดลอก</button>
+    <div class="summary-topbar">
+      <div class="summary-dot"></div>
+      <span class="summary-label-text">สรุปรายการ</span>
+      <span class="summary-sub-text">Price Summary</span>
+    </div>
+    <div class="summary-body">
+      <textarea id="summaryResult" rows="10" readonly
+        placeholder="กรอกรายละเอียดด้านบน ระบบจะคำนวณให้อัตโนมัติ"></textarea>
+      <div class="summary-footer">
+        <button id="copyBtn">คัดลอก</button>
+      </div>
+    </div>
   </div>
 
+  <!-- Dark/Light Toggle -->
+  <button id="modeToggle" aria-label="Toggle dark mode">
+    <div class="toggle-track">
+      <span class="toggle-bg-label label-sun">☀︎</span>
+      <span class="toggle-bg-label label-moon">☽</span>
+      <div class="toggle-knob" id="toggleKnob">
+        <span id="toggleIcon">☀︎</span>
+      </div>
+    </div>
+  </button>
+
   <script src="script.js"></script>
+  <script src="custom-select.js"></script>
+
+  <script>
+    /* ─── 1. DARK MODE ───────────────────────────── */
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const modeBtn = document.getElementById('modeToggle');
+    const modeIcon = document.getElementById('toggleIcon');
+    const DARK_KEY = 'cc_dark';
+    let isDark = localStorage.getItem(DARK_KEY) === '1';
+
+    function applyTheme(dark) {
+      isDark = dark;
+      // apply to BOTH html (for background) and body (for .dark classes)
+      htmlEl.classList.toggle('dark', dark);
+      bodyEl.classList.toggle('dark', dark);
+      modeIcon.textContent = dark ? '☽' : '☀︎';
+      localStorage.setItem(DARK_KEY, dark ? '1' : '0');
+    }
+    modeBtn.addEventListener('click', () => applyTheme(!isDark));
+    applyTheme(isDark);
+
+    /* ─── 2. CHECKBOX → TOGGLE SWITCH ───────────────
+       script.js creates checkboxes like:
+         <div class="form-group check">
+           <label>
+             <input type="checkbox" id="...">
+             text
+           </label>
+         </div>
+       We insert <span class="toggle-sw"> directly AFTER
+       the <input> (still inside the label), so the CSS
+       sibling selector  input:checked + .toggle-sw  works.
+    ─────────────────────────────────────────────────── */
+    function upgradeCheckboxes(root) {
+      const scope = root || document;
+      scope.querySelectorAll('.check input[type="checkbox"]').forEach(cb => {
+        // Skip if already upgraded
+        if (cb.nextElementSibling && cb.nextElementSibling.classList.contains('toggle-sw')) return;
+        const sw = document.createElement('span');
+        sw.className = 'toggle-sw';
+        // insertAfter the input (inside the label)
+        cb.parentNode.insertBefore(sw, cb.nextSibling);
+      });
+    }
+
+    // Run now (for any static checkboxes)
+    upgradeCheckboxes();
+
+    // Watch for dynamically added cards
+    const container = document.getElementById('itemsContainer');
+    if (container) {
+      new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const node of m.addedNodes) {
+            if (node.nodeType !== 1) continue;
+            // Card enter animation
+            if (node.classList.contains('item-card')) {
+              node.classList.add('card-enter');
+              node.addEventListener('animationend',
+                () => node.classList.remove('card-enter'), { once: true });
+            }
+            // Upgrade checkboxes in the new subtree
+            // Use setTimeout so script.js setTimeout(()=>{...}) callbacks run first
+            setTimeout(() => upgradeCheckboxes(node), 0);
+          }
+        }
+      }).observe(container, { childList: true, subtree: false });
+    }
+
+    /* ─── 3. CARD EXIT ANIMATION ─────────────────── */
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.item-delete');
+      if (!btn) return;
+      const card = btn.closest('.item-card');
+      if (!card) return;
+      const match = card.id && card.id.match(/item-(\d+)/);
+      if (!match) return;
+      if (typeof window.deleteItem !== 'function') return;
+
+      e.stopImmediatePropagation();
+      card.classList.add('card-exit');
+      card.addEventListener('animationend', () => {
+        window.deleteItem(match[1]);
+      }, { once: true });
+    }, true);
+  </script>
+
 </body>
 </html>
-
