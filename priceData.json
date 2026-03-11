@@ -410,4 +410,21 @@
       "price": 359
     }
   ]
+  ,"rollerCurtainData":[
+{
+"rollerType":"ม่านม้วน",
+"percent":"1%",
+"price":750
+},
+{
+"rollerType":"ม่านม้วน",
+"percent":"3%",
+"price":590
+},
+{
+"rollerType":"ม่านม้วน",
+"percent":"Blackout",
+"price":550
+}
+]
 }
