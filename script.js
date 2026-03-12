@@ -1424,7 +1424,13 @@ cardSummaries.push({
   const multiWood  = blindsAgg.WOOD.entries.length  >= 2;
   const multiKDN   = blindsAgg.KDN.entries.length   >= 2;
   const multiKACEE = blindsAgg.KACEE.entries.length >= 2;
-  const multiRoller = blindsAgg.ROLLER.entries.length >= 2;
+  const rollerKeys = Object.keys(blindsAgg).filter(k => k.startsWith('ROLLER_'));
+
+const rollerMultiMap = {};
+
+for (const k of rollerKeys) {
+  rollerMultiMap[k] = blindsAgg[k].entries.length >= 2;
+}
 
   const romanKeys = Object.keys(romanAgg);
   const romanMultiMap = {};
@@ -1480,12 +1486,13 @@ cardSummaries.push({
     }
 
     // มู่ลี่: แสดงบนการ์ดถ้าไม่ใช่กรณี multi
-    const woodHere  = blindsAgg.WOOD.entries.filter(e => e.id === id);
-    if (!multiWood && woodHere.length === 1) {
-      cardOut += `มู่ลี่ไม้\n${woodHere[0].line}\n`;
-      cardTotal += woodHere[0].amt;
-      blockCount++;
-    }
+    const woodHere = blindsAgg.WOOD.entries.filter(e => e.id === id);
+
+if (!multiWood && woodHere.length === 1 && !cs.hasOpaque && !cs.hasSheer && !cs.hasRail) {
+  cardOut += `มู่ลี่ไม้\n${woodHere[0].line}\n`;
+  cardTotal += woodHere[0].amt;
+  blockCount++;
+}
     const kdnHere   = blindsAgg.KDN.entries.filter(e => e.id === id);
     if (!multiKDN && kdnHere.length === 1) {
       cardOut += `มู่ลี่อลูมิเนียม STE\n${kdnHere[0].line}\n`;
@@ -1501,14 +1508,49 @@ cardSummaries.push({
 
     // ม่านพับ: แสดงบนการ์ดถ้าชนิดผ้านั้นไม่ใช่ multi
     for (const k of romanKeys) {
-      const here = romanAgg[k].entries.filter(e => e.id === id);
-      if (!romanMultiMap[k] && here.length === 1) {
-        cardOut += `${romanAgg[k].label}\n${here[0].line}\n`;
-        cardTotal += here[0].amt;
-        blockCount++;
-      }
-    }
 
+  const here = romanAgg[k].entries.filter(e => e.id === id);
+
+  if (!romanMultiMap[k] && here.length === 1 && !cs.hasOpaque && !cs.hasSheer && !cs.hasRail) {
+
+    cardOut += `${romanAgg[k].label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+}
+
+// ม่านม้วน
+for (const k of rollerKeys) {
+
+  const here = blindsAgg[k].entries.filter(e => e.id === id);
+
+  if (!rollerMultiMap[k] && here.length === 1) {
+
+    cardOut += `${blindsAgg[k].label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+}
+
+// มุ้งจีบ
+for (const k in blindsAgg) {
+
+  if (!k.startsWith('MOSQ_')) continue;
+
+  const here = blindsAgg[k].entries.filter(e => e.id === id);
+  const multi = blindsAgg[k].entries.length >= 2;
+
+  if (!multi && here.length === 1) {
+
+    cardOut += `${blindsAgg[k].label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+
+}
 
 
     // เงื่อนไขขึ้น “รวม … บาท” เฉพาะถ้ามี >= 2 หมวดในการ์ด
@@ -1521,11 +1563,21 @@ cardSummaries.push({
   }
 
   function appendGroupBlock(group) {
-    if (!group || group.entries.length < 1) return false;
-    const body = group.entries.map(e => e.line).join('\n');
-    output += (output ? '\n\n' : '') + group.label + '\n' + body + `\nรวม ${fmt(group.total)} บาท`;
-    return true;
-  }
+
+  if (!group) return false;
+
+  // ต้องมีมากกว่า 1 รายการ ถึงจะรวม
+  if (group.entries.length < 2) return false;
+
+  const body = group.entries.map(e => e.line).join('\n');
+
+  output += (output ? '\n\n' : '') +
+    group.label + '\n' +
+    body +
+    `\nรวม ${fmt(group.total)} บาท`;
+
+  return true;
+}
 
   // รวม ราง / ม่านทึบ / ม่านโปร่ง (แบบข้ามการ์ด)
   for (const k of Object.keys(railAgg))  { if (appendGroupBlock(railAgg[k]))  groupsPrinted++; }
