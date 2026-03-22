@@ -51,29 +51,28 @@
     // On mobile: CSS handles bottom-sheet positioning
     if (window.innerWidth <= 600) return;
 
-    const rect    = trigger.getBoundingClientRect();
-    const vw      = window.innerWidth;
-    const vh      = window.innerHeight;
-    const GAP     = 6;
-    const scrollX = window.scrollX || window.pageXOffset || 0;
-    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const rect = trigger.getBoundingClientRect();
+    const vw   = window.innerWidth;
+    const vh   = window.innerHeight;
+    const GAP  = 6;
+    const panelW = Math.min(Math.max(rect.width, 220), 460);
 
-    // Match panel width exactly to trigger width
-    const panelW  = Math.min(Math.max(rect.width, 220), 460);
-    const panelH  = Math.min(vh * 0.72, 480);
+    // Use actual rendered height — panel must be display:flex before calling this
+    const panelH = Math.min(panel.scrollHeight || 300, vh * 0.72);
+
     const opensUp = rect.bottom + GAP + panelH > vh;
 
-    // panel is position:absolute inside body (static) = relative to document
-    // getBoundingClientRect gives viewport coords → add scroll to get doc coords
-    let top  = opensUp
-      ? rect.top    + scrollY - panelH - GAP
-      : rect.bottom + scrollY + GAP;
+    let top = opensUp
+      ? rect.top - panelH - GAP
+      : rect.bottom + GAP;
 
-    // Align left with trigger, then clamp to stay inside viewport
-    let leftVP = rect.left;
-    if (leftVP + panelW > vw - 8) leftVP = vw - panelW - 8;
-    if (leftVP < 8)                leftVP = 8;
-    const left = leftVP + scrollX;
+    // Clamp so panel never goes off-screen vertically
+    if (top < 8)               top = 8;
+    if (top + panelH > vh - 8) top = Math.max(8, vh - panelH - 8);
+
+    let left = rect.left;
+    if (left + panelW > vw - 8) left = vw - panelW - 8;
+    if (left < 8)                left = 8;
 
     panel.style.width           = panelW + 'px';
     panel.style.top             = top    + 'px';
@@ -171,11 +170,14 @@
 
     titleEl.textContent = getSelectLabel(sel);
     buildList(sel);
-    positionPanel(sel);
 
-    // Force reflow before adding .csd-visible so transition fires
+    // Show panel (still invisible via opacity:0) BEFORE positionPanel
+    // so panel.scrollHeight reflects the actual rendered content height
     backdrop.classList.add('csd-visible');
     panel.style.display = 'flex';
+
+    positionPanel(sel);  // now scrollHeight is accurate
+
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         panel.classList.add('csd-visible');
