@@ -61,7 +61,7 @@ function calcFabricMode(width,type,fabricWidth){
 let realWidth = width;
 
 if(type.includes("ม่านจีบ")){
-realWidth = width*2.2;
+realWidth = width*2.3;
 }
 
 if(type.includes("ม่านลอนเทป")){
@@ -397,7 +397,7 @@ function addItem(){
     if (!w || !h) { $(`#wb-price-${id}`).textContent=''; items.get(id).wood=0; return; }
     let unit = w*h*1.2*1290;
     if (unit < 1548) unit = 1548;
-    const total = Math.round(unit*q);
+    const total = unit*q;
     $(`#wb-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).wood = total;
   }
@@ -502,7 +502,7 @@ function addItem(){
     const floor = (fabric==='Blackout') ? 990  : (fabric==='Sheer' ? 900  : 950);
     let perSet = Math.max(rate*w, floor);
     if (norail) perSet = Math.max(0, perSet - 150);
-    const total = Math.round(perSet*q);
+    const total = perSet*q;
     $(`#roman-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).roman = total;
   }
@@ -555,7 +555,7 @@ if(!w || !h || !price){
   return;
 }
 
-const total = Math.round(w*h*price*q);
+const total = w*h*price*q;
 
 $(`#roller-price-${id}`).textContent =
 fmt(total)+' บาท';
@@ -635,7 +635,7 @@ if(brand==="PNET"){
   price=1500;
 }
 
-const total = Math.round(w*h*price*q);
+const total = w*h*price*q;
 
 $(`#mosq-price-${id}`).textContent = fmt(total)+' บาท';
 
@@ -701,7 +701,7 @@ function rowRail(id){
     const w = toNum($(`#rw-${id}`).value);
     const q = Math.max(1, toNum($(`#rq-${id}`).value, 1));
     if (!r || !w) { $(`#rp-${id}`).textContent = ''; items.get(id).rail = 0; return; }
-    const val = Math.round(r.price * w * q);
+    const val = r.price * w * q;
     $(`#rp-${id}`).textContent = fmt(val) + ' บาท';
     items.get(id).rail = val;
   }
@@ -862,9 +862,9 @@ ctype
 
 }
 
-$(`#oprice-${id}`).textContent = fmt(Math.round(val)) + ' บาท';
+$(`#oprice-${id}`).textContent = fmt(val) + ' บาท';
 
-items.get(id).opaque = Math.round(val);
+items.get(id).opaque = val;
 
 autoSummarize(); 
 
@@ -969,13 +969,13 @@ if(over && h){
 
 const fabricWidth = parseFloat($(`#fabricWidthSheer-${id}`).value);
 
-// เช็คขวางผ้า / ต่อผ้า
+// เช็คขวางผ้า / ต่อผ้า — ใช้ชนิดม่านจริงๆ ไม่ใช่ ม่านตาไก่
 const curtainType = $(`#combo-${id}`).value.split('|')[1] || "ม่านตาไก่";
 const mode = calcFabricMode(w,curtainType,fabricWidth);
 
 items.get(id).sheerMode = mode;
 
-if(mode === "ต่อผ้า"){
+if(mode === "ต่อผ้า" || mode === "ขวางผ้า"){
 
 const pricePerYard = getFabricYardPrice(type);
 
@@ -985,15 +985,15 @@ h,
 fabricWidth,
 pricePerYard,
 q,
-"ม่านตาไก่"
+curtainType
 );
 
 }
 
 }
 
-$(`#sprice-${id}`).textContent = fmt(Math.round(val)) + ' บาท';
-items.get(id).sheer = Math.round(val);
+$(`#sprice-${id}`).textContent = fmt(val) + ' บาท';
+items.get(id).sheer = val;
 
 autoSummarize();
   }
