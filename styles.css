@@ -383,7 +383,7 @@ select.csd-open {
 
 /* ── Panel */
 .csd-panel {
-  position: absolute; z-index: 8100;
+  position: fixed; z-index: 8100;
   min-width: 220px; max-width: 440px;
   max-height: 72vh;
   display: flex; flex-direction: column;
