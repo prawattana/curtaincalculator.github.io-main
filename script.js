@@ -397,7 +397,7 @@ function addItem(){
     if (!w || !h) { $(`#wb-price-${id}`).textContent=''; items.get(id).wood=0; return; }
     let unit = w*h*1.2*1290;
     if (unit < 1548) unit = 1548;
-    const total = unit*q;
+    const total = Math.round(unit*q);
     $(`#wb-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).wood = total;
   }
@@ -502,7 +502,7 @@ function addItem(){
     const floor = (fabric==='Blackout') ? 990  : (fabric==='Sheer' ? 900  : 950);
     let perSet = Math.max(rate*w, floor);
     if (norail) perSet = Math.max(0, perSet - 150);
-    const total = perSet*q;
+    const total = Math.round(perSet*q);
     $(`#roman-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).roman = total;
   }
@@ -555,7 +555,7 @@ if(!w || !h || !price){
   return;
 }
 
-const total = w*h*price*q;
+const total = Math.round(w*h*price*q);
 
 $(`#roller-price-${id}`).textContent =
 fmt(total)+' บาท';
@@ -635,7 +635,7 @@ if(brand==="PNET"){
   price=1500;
 }
 
-const total = w*h*price*q;
+const total = Math.round(w*h*price*q);
 
 $(`#mosq-price-${id}`).textContent = fmt(total)+' บาท';
 
@@ -701,7 +701,7 @@ function rowRail(id){
     const w = toNum($(`#rw-${id}`).value);
     const q = Math.max(1, toNum($(`#rq-${id}`).value, 1));
     if (!r || !w) { $(`#rp-${id}`).textContent = ''; items.get(id).rail = 0; return; }
-    const val = r.price * w * q;
+    const val = Math.round(r.price * w * q);
     $(`#rp-${id}`).textContent = fmt(val) + ' บาท';
     items.get(id).rail = val;
   }
@@ -862,9 +862,9 @@ ctype
 
 }
 
-$(`#oprice-${id}`).textContent = fmt(val) + ' บาท';
+$(`#oprice-${id}`).textContent = fmt(Math.round(val)) + ' บาท';
 
-items.get(id).opaque = val;
+items.get(id).opaque = Math.round(val);
 
 autoSummarize(); 
 
@@ -992,8 +992,8 @@ q,
 
 }
 
-$(`#sprice-${id}`).textContent = fmt(val) + ' บาท';
-items.get(id).sheer = val;
+$(`#sprice-${id}`).textContent = fmt(Math.round(val)) + ' บาท';
+items.get(id).sheer = Math.round(val);
 
 autoSummarize();
   }
