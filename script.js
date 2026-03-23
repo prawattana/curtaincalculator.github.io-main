@@ -1227,7 +1227,7 @@ delete st._sheerDetail;
       st._railDetail = {
         label: rname,
         line:  `${rw} = ${rq} ชุด ${fmt(st.rail)} บาท`,
-        amt:   st.rail,
+        amt: Math.round(st.rail),
       };
       hasRail = true;
     }
@@ -1246,7 +1246,7 @@ if(mode){
       st._opaqueDetail = {
         label: oname,
         line:  `${ow}*${hText} = ${oq} ผืน ${fmt(st.opaque)} บาท`,
-        amt:   st.opaque,
+        amt: Math.round(st.opaque),
       };
       hasOpaque = true;
     }
@@ -1268,7 +1268,7 @@ if(mode){
 st._sheerDetail = {
   label: sname,
   line: `${sw}*${hText} = ${sq} ผืน ${fmt(st.sheer)} บาท`,
-  amt: st.sheer,
+  amt: Math.round(st.sheer),
 };
 
 hasSheer = true;
@@ -1279,7 +1279,7 @@ hasSheer = true;
       const w = fmtSize(toNum($(`#wb-w-${id}`)?.value), $(`#wb-w-${id}`));
       const h = fmtSize(toNum($(`#wb-h-${id}`)?.value), $(`#wb-h-${id}`));
       const q = Math.max(1, toNum($(`#wb-q-${id}`)?.value, 1));
-      blindsAgg.WOOD.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.wood)} บาท`, amt: st.wood });
+      blindsAgg.WOOD.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.wood)} บาท`, amt: Math.round(st.wood) });
       blindsAgg.WOOD.total += st.wood;
     }
     // 5) มู่ลี่อลูมิเนียม → กรู๊ป
@@ -1287,14 +1287,14 @@ hasSheer = true;
       const w = fmtSize(toNum($(`#alu-w-${id}`)?.value), $(`#alu-w-${id}`));
       const h = fmtSize(toNum($(`#alu-h-${id}`)?.value), $(`#alu-h-${id}`));
       const q = Math.max(1, toNum($(`#alu-q-${id}`)?.value, 1));
-      blindsAgg.KDN.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kdn)} บาท`, amt: st.kdn });
+      blindsAgg.KDN.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kdn)} บาท`, amt: Math.round(st.kdn) });
       blindsAgg.KDN.total += st.kdn;
     }
     if (st.kacee > 0) {
       const w = fmtSize(toNum($(`#alu-w-${id}`)?.value), $(`#alu-w-${id}`));
       const h = fmtSize(toNum($(`#alu-h-${id}`)?.value), $(`#alu-h-${id}`));
       const q = Math.max(1, toNum($(`#alu-q-${id}`)?.value, 1));
-      blindsAgg.KACEE.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kacee)} บาท`, amt: st.kacee });
+      blindsAgg.KACEE.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kacee)} บาท`, amt: Math.round(st.kacee) });
       blindsAgg.KACEE.total += st.kacee;
     }
 
@@ -1306,7 +1306,7 @@ hasSheer = true;
       const q = Math.max(1, toNum($(`#roman-q-${id}`)?.value, 1));
       const fabric = $(`#roman-fabric-${id}`)?.value || 'Dimout';
       if (!romanAgg[fabric]) romanAgg[fabric] = { label: `ม่านพับ (${fabric})`, entries: [], total: 0 };
-      romanAgg[fabric].entries.push({ id, line: `${w}*${hText} = ${q} ชุด ${fmt(st.roman)} บาท`, amt: st.roman });
+      romanAgg[fabric].entries.push({ id, line: `${w}*${hText} = ${q} ชุด ${fmt(st.roman)} บาท`, amt: Math.round(st.roman) });
       romanAgg[fabric].total += st.roman;
     }
 
@@ -1332,7 +1332,7 @@ if (st.roller > 0) {
   blindsAgg[key].entries.push({
     id,
     line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท`,
-    amt: st.roller
+    amt: Math.round(st.roller)
   });
 
   blindsAgg[key].total += st.roller;
@@ -1370,7 +1370,7 @@ const typeText =
 blindsAgg[key].entries.push({
   id,
   line:`${w}*${h} = ${q} ชุด ${fmt(st.mosq)} บาท (${typeText})`,
-  amt:st.mosq
+  amt: Math.round(st.mosq)
 });
 
   blindsAgg[key].total+=st.mosq;
