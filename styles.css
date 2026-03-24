@@ -770,3 +770,8 @@ select.csd-open {
   .alt-actions { grid-column:1/-1; }
   #copyBtn { width:100%; justify-content:center; }
 }
+
+.hook-btn.active{
+  background:#333;
+  color:#fff;
+}
