@@ -56,6 +56,20 @@ const toNum = (v, d=0) => {
   return isNaN(n) ? d : n;
 };
 
+function formatHeightSmart(num){
+  if (isNaN(num)) return '';
+
+  const val = Number(num);
+  const fixed3 = val.toFixed(3);
+
+  // ถ้าหลักที่ 3 เป็น 0 → ใช้ 2 ตำแหน่ง
+  if (fixed3.endsWith('0')) {
+    return val.toFixed(2);
+  }
+
+  return fixed3;
+}
+
 function calcFabricMode(width,type,fabricWidth){
 
 let realWidth = width;
@@ -536,32 +550,58 @@ secRoller.innerHTML = `
 <div class="price-box" id="roller-price-${id}"></div>
 </div>
 `;
+
 function recalcRoller(){
 
-const comboVal = $(`#combo-${id}`).value;
-const percent = comboVal.split('|')[1];
+  const combo = $(`#combo-${id}`).value;
+const type = combo.split('|')[1]; // Blackout / 3% / 1%
+  const w = toNum($(`#roller-w-${id}`).value);
+  const h = toNum($(`#roller-h-${id}`).value);
+  const q = Math.max(1, toNum($(`#roller-q-${id}`).value, 1));
 
-const data = rollerCurtainData.find(r=>r.percent===percent);
-const price = data ? data.price : 0;
+  if (!w || !h){
+    $(`#roller-price-${id}`).textContent = '';
+    items.get(id).roller = 0;
+    return;
+  }
 
-const w = toNum($(`#roller-w-${id}`).value);
-const h = toNum($(`#roller-h-${id}`).value);
-const q = Math.max(1,toNum($(`#roller-q-${id}`).value,1));
+  // ✅ ตารางราคา (ตามชีท)
+  let pricePerSqm = 0;
+  let minPrice = 0;
 
-if(!w || !h || !price){
-  $(`#roller-price-${id}`).textContent='';
-  items.get(id).roller = 0;
-  autoSummarize();
-  return;
-}
+  if(type === "Blackout"){
+    pricePerSqm = 550;
+    minPrice = 825;
+  }
+  else if(type === "3%"){
+    pricePerSqm = 590;
+    minPrice = 885;
+  }
+  else if(type === "1%"){
+    pricePerSqm = 750;
+    minPrice = 1125;
+  }
 
-const total = w*h*price*q;
+  // ✅ สูตรชีท
+  let area = w * h * 1.2;
 
-$(`#roller-price-${id}`).textContent =
-fmt(total)+' บาท';
+  // ถ้าไม่ถึง 1.50 → ปัดเป็น 1.50
+  if(area < 1.5){
+    area = 1.5;
+  }
 
-items.get(id).roller = total;
-autoSummarize();
+  let unitPrice = area * pricePerSqm;
+
+  // ✅ บังคับขั้นต่ำ
+  if(unitPrice < minPrice){
+    unitPrice = minPrice;
+  }
+
+  const total = unitPrice * q;
+
+  $(`#roller-price-${id}`).textContent = fmt(total) + ' บาท';
+
+  items.get(id).roller = total;
 }
 
 setTimeout(()=>{
@@ -569,7 +609,7 @@ setTimeout(()=>{
 bindAuto($(`#roller-w-${id}`),recalcRoller);
 bindAuto($(`#roller-h-${id}`),recalcRoller);
 bindAuto($(`#roller-q-${id}`),recalcRoller);
-
+bindAuto($(`#combo-${id}`), recalcRoller);
 });
 
 
@@ -670,7 +710,20 @@ card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, foo
   });
 
   // init state
-  items.set(id, { rail:0, opaque:0, sheer:0, wood:0, kdn:0, kacee:0, roman:0, roller:0, mosq:0 });
+  items.set(id, {
+  rail:0,
+  opaque:0,
+  sheer:0,
+  wood:0,
+  kdn:0,
+  kacee:0,
+  roman:0,
+  roller:0,
+  mosq:0,
+  hookRing: 0,
+  hookRingOpaque: false,
+hookRingSheer: false,
+});
 
   // สรุปทันทีเมื่อเพิ่มการ์ด
   autoSummarize(true);
@@ -880,6 +933,8 @@ right.append(selGrp, widthGrp, qtyGrp, price, overBox);
   bindAuto($(`#oq-${id}`), recalc);
   bindAuto($(`#h-${id}`),  recalc);
   bindAuto($(`#fabricWidthOpaque-${id}`), recalc);
+  bindAuto($(`#ow-${id}`), () => recalcHookRing(id));
+bindAuto($(`#oq-${id}`), () => recalcHookRing(id));
 });
 
   return li;
@@ -1018,77 +1073,239 @@ autoSummarize();
 function widthFromRail(id, targetBase, mode) {
   const railEl = document.querySelector(`#rw-${id}`);
   const tgt = document.querySelector(`#${targetBase}-${id}`);
-  if (!railEl || !tgt) return;
+  const qtyEl = document.querySelector(`#${targetBase === 'ow' ? 'oq' : 'sq'}-${id}`);
+  const combo = document.querySelector(`#combo-${id}`)?.value || '';
+
+  if (!railEl || !tgt || !qtyEl) return;
+
   const rw = parseFloat(railEl.value);
   if (isNaN(rw)) return;
+
   const keep3 = /\.\d{3,}/.test(railEl.value || '');
-  const val = (mode === 'half') ? (rw / 2) : rw;
+
+  // 👉 ดึงชนิดม่าน
+  const type = combo.split('|')[1] || '';
+
+  // 👉 เช็คว่าเป็น “กลุ่มพิเศษ”
+  const isPleatOrWave =
+    type.includes('ม่านจีบ') ||
+    type.includes('ม่านลอนเทป');
+
+  let val = rw;
+  let qty = 1;
+
+  if (isPleatOrWave) {
+    // ✅ ม่านจีบ / ลอนเทป
+    if (mode === 'half') {
+      val = rw / 2;
+      qty = 2;
+    }
+    if (mode === 'full') {
+      val = rw;
+      qty = 1;
+    }
+  } else {
+    // ✅ ม่านทั่วไป
+    if (mode === 'half') {
+      val = rw;
+      qty = 2;
+    }
+    if (mode === 'full') {
+      val = rw * 2;
+      qty = 1;
+    }
+  }
+
   tgt.value = keep3 ? val.toFixed(3) : val.toFixed(2);
+  qtyEl.value = qty;
+
   tgt.dispatchEvent(new Event('input'));
   tgt.dispatchEvent(new Event('change'));
+  qtyEl.dispatchEvent(new Event('input'));
+  qtyEl.dispatchEvent(new Event('change'));
 }
 function attachWidthButtons(id, targetBase) {
   const inp = document.querySelector(`#${targetBase}-${id}`);
   if (!inp) return;
   if (inp.dataset.widthBtns === '1') return;
+
+  // ✅ container แนวตั้ง
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.flexDirection = 'column';
+  wrap.style.gap = '6px';
+  wrap.style.marginTop = '6px';
+
+  // แถวปุ่ม แยกกลาง / เดี่ยว
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.gap = '6px';
+
   const btnHalf = document.createElement('button');
   btnHalf.type = 'button';
   btnHalf.className = 'action-btn half-btn';
   btnHalf.textContent = 'แยกกลาง';
   btnHalf.onclick = () => widthFromRail(id, targetBase, 'half');
+
   const btnFull = document.createElement('button');
   btnFull.type = 'button';
   btnFull.className = 'action-btn full-btn';
   btnFull.textContent = 'เดี่ยว';
   btnFull.onclick = () => widthFromRail(id, targetBase, 'full');
-  inp.insertAdjacentElement('afterend', btnFull);
-  inp.insertAdjacentElement('afterend', btnHalf);
+
+  row.append(btnHalf, btnFull);
+  wrap.append(row);
+
+  // ✅ ปุ่มห่วงโชว์ราง (ทั้ง ow และ sw)
+  const btnRing = document.createElement('button');
+  btnRing.type = 'button';
+  btnRing.className = 'hook-btn';
+  btnRing.textContent = 'ห่วงโชว์ราง';
+
+  btnRing.onclick = () => {
+  const st = items.get(id);
+
+  if (targetBase === 'ow') {
+    st.hookRingOpaque = !st.hookRingOpaque;
+    btnRing.classList.toggle('active', st.hookRingOpaque);
+  }
+
+  if (targetBase === 'sw') {
+    st.hookRingSheer = !st.hookRingSheer;
+    btnRing.classList.toggle('active', st.hookRingSheer);
+  }
+
+  recalcHookRing(id);
+};
+
+  wrap.append(btnRing);
+
+  inp.insertAdjacentElement('afterend', wrap);
+
   inp.dataset.widthBtns = '1';
 }
 function adjustHeightBy(id, delta) {
   const hEl = document.querySelector(`#h-${id}`);
   if (!hEl) return;
+
   const now = parseFloat(hEl.value);
   if (isNaN(now)) return;
+
   const next = now - delta;
-  if (Math.abs(delta - 0.055) < 1e-9) {
-    hEl.value = next.toFixed(3);
-  } else {
-    const keep3 = /\.\d{3,}/.test(hEl.value || '');
-    hEl.value = keep3 ? next.toFixed(3) : next.toFixed(2);
-  }
+
+  // ✅ บังคับ 3 ตำแหน่งเสมอ
+  hEl.value = formatHeightSmart(next);
+
   hEl.dispatchEvent(new Event('input'));
   hEl.dispatchEvent(new Event('change'));
   summarizeAllItems();
 }
+
+function recalcHookRing(id){
+
+  const st = items.get(id);
+
+  // 👉 ม่านทึบ
+  const ow = toNum(document.querySelector(`#ow-${id}`)?.value);
+  const oq = Math.max(1, toNum(document.querySelector(`#oq-${id}`)?.value, 1));
+
+  // 👉 ม่านโปร่ง
+  const sw = toNum(document.querySelector(`#sw-${id}`)?.value);
+  const sq = Math.max(1, toNum(document.querySelector(`#sq-${id}`)?.value, 1));
+
+  let totalWidth = 0;
+
+  if(st.hookRingOpaque && ow){
+    totalWidth += ow * oq;
+  }
+
+  if(st.hookRingSheer && sw){
+    totalWidth += sw * sq;
+  }
+
+  const price = totalWidth * 30;
+
+  st.hookRing = price;
+
+  autoSummarize();
+}
+
 function attachHeightButtonsPleat(id) {
   const hEl = document.querySelector(`#h-${id}`);
   if (!hEl) return;
   if (hEl.dataset.hookBtns === '1') return;
-  const btnLong = document.createElement('button');
-  btnLong.type = 'button';
-  btnLong.className = 'hook-btn';
-  btnLong.textContent = 'ตะขอยาว';
-  btnLong.onclick = () => adjustHeightBy(id, 0.05);
-  const btnShort = document.createElement('button');
-  btnShort.type = 'button';
-  btnShort.className = 'hook-btn';
-  btnShort.textContent = 'ตะขอสั้น';
-  btnShort.onclick = () => adjustHeightBy(id, 0.020);
-  hEl.insertAdjacentElement('afterend', btnShort);
-  hEl.insertAdjacentElement('afterend', btnLong);
+
+  // container (จัด layout 2 คอลัมน์)
+  const wrap = document.createElement('div');
+  wrap.style.display = 'grid';
+  wrap.style.gridTemplateColumns = '1fr 1fr';
+  wrap.style.gap = '6px';
+  wrap.style.marginTop = '6px';
+
+  function makeBtn(text, reduce) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hook-btn';
+    btn.textContent = text;
+
+    btn.onclick = () => {
+      adjustHeightBy(id, reduce);
+    };
+
+    return btn;
+  }
+
+  // === แถวที่ 1 ===
+  wrap.append(
+    makeBtn('ตะขอยาว', 0.05),
+    makeBtn('ตะขอยาว(ใช้ลิ้นราง)', 0.045)
+  );
+
+  // === แถวที่ 2 ===
+  wrap.append(
+    makeBtn('ตะขอสั้น', 0.02),
+    makeBtn('ตะขอสั้น(ใช้ลิ้นราง)', 0.015)
+  );
+
+  // === แถวที่ 3 ===
+  wrap.append(
+    makeBtn('ตะขอเพดาน', 0.03),
+    makeBtn('ตะขอเพดาน(ใช้ลิ้นราง)', 0.02)
+  );
+
+  // ใส่หลัง input ความสูง
+  hEl.insertAdjacentElement('afterend', wrap);
+
   hEl.dataset.hookBtns = '1';
 }
 function attachHeightButtonWave(id) {
   const hEl = document.querySelector(`#h-${id}`);
   if (!hEl) return;
   if (hEl.dataset.waveBtn === '1') return;
-  const btnCeil = document.createElement('button');
-  btnCeil.type = 'button';
-  btnCeil.className = 'hook-btn';
-  btnCeil.textContent = 'ติดเพดาน';
-  btnCeil.onclick = () => adjustHeightBy(id, 0.055);
-  hEl.insertAdjacentElement('afterend', btnCeil);
+
+  // ✅ ใช้ grid เหมือนม่านจีบ
+  const wrap = document.createElement('div');
+  wrap.style.display = 'grid';
+  wrap.style.gridTemplateColumns = '1fr 1fr';
+  wrap.style.gap = '6px';
+  wrap.style.marginTop = '6px';
+
+  function makeBtn(text, reduce){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hook-btn';
+    btn.textContent = text;
+    btn.onclick = () => adjustHeightBy(id, reduce);
+    return btn;
+  }
+
+  wrap.append(
+    makeBtn('ติดเพดาน', 0.055),
+    makeBtn('ติดเพดาน(ใช้ลิ้นราง)', 0.045)
+  );
+
+  hEl.insertAdjacentElement('afterend', wrap);
+
   hEl.dataset.waveBtn = '1';
 }
 // ล้างปุ่มเครื่องมือก่อนสลับแบบม่าน
@@ -1151,7 +1368,16 @@ function hydrateCard(id){
 
     // ปุ่มช่วยเฉพาะ “ม่านจีบ/ม่านลอนเทป/ม่านลอนตะขอ”
     const base = baseType(ctype);
-    if (base === 'ม่านจีบ' || base === 'ม่านลอนเทป' || base === 'ม่านลอนตะขอ') {
+    if (
+  base === 'ม่านจีบ' ||
+  base === 'ม่านลอนเทป' ||
+  base === 'ม่านลอนตะขอ' ||
+  base === 'ม่านตาไก่' ||
+  base === 'ม่านซ่อนหู' ||
+  base === 'ม่านคอกระเช้า' ||
+  base === 'ม่านสอด' ||
+  base === 'ม่านลอนโซ่'
+) {
       attachWidthButtons(id, 'ow');
       attachWidthButtons(id, 'sw');
       if (base === 'ม่านจีบ' || base === 'ม่านลอนตะขอ') attachHeightButtonsPleat(id);
@@ -1459,6 +1685,13 @@ for (const k of rollerKeys) {
         cardTotal += det.amt;
         blockCount++;
       }
+
+      const st = items.get(id);
+
+if(st.hookRing > 0){
+  cardOut += `+ห่วงโชว์ราง ${fmt(st.hookRing)} บาท\n`;
+  cardTotal += st.hookRing;
+}
     }
 
     // ม่านทึบ: แสดงบนการ์ดถ้า “ไม่ถูกรวม”
