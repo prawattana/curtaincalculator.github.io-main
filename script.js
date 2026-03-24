@@ -1149,12 +1149,12 @@ function hydrateCard(id){
     $(`#sec-curtain-${id}`).style.display = '';
     if (footerEl) footerEl.style.display = '';
 
-    // ปุ่มช่วยเฉพาะ “ม่านจีบ/ม่านลอนเทป”
+    // ปุ่มช่วยเฉพาะ “ม่านจีบ/ม่านลอนเทป/ม่านลอนตะขอ”
     const base = baseType(ctype);
-    if (base === 'ม่านจีบ' || base === 'ม่านลอนเทป') {
+    if (base === 'ม่านจีบ' || base === 'ม่านลอนเทป' || base === 'ม่านลอนตะขอ') {
       attachWidthButtons(id, 'ow');
       attachWidthButtons(id, 'sw');
-      if (base === 'ม่านจีบ') attachHeightButtonsPleat(id);
+      if (base === 'ม่านจีบ' || base === 'ม่านลอนตะขอ') attachHeightButtonsPleat(id);
       else attachHeightButtonWave(id);
     }
   }
