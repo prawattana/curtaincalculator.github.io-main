@@ -1,772 +1,1742 @@
-/* ============================================================
-   CURTAIN CALCULATOR — iOS / macOS Liquid Glass  ✦ v3
-   ============================================================ */
+/*******************************
+ * โหลดข้อมูลราคา (จาก JSON)
+ *******************************/
+let railData = [];
+let curtainData = [];
+let sheerCurtainData = [];
+let rollerCurtainData = [];
+let blindKDN = null;     // blindsData.json
+let blindKACEE = null;   // ฺblindsDataKacee.json
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap');
+async function loadPrice() {
+  // ราง / ม่านทึบ / ม่านโปร่ง
+  const res = await fetch('priceData.json');
+  if (!res.ok) throw new Error('โหลด priceData.json ไม่สำเร็จ');
+  const json = await res.json();
+  railData = json.railData || [];
+  curtainData = json.curtainData || [];
+  sheerCurtainData = json.sheerCurtainData || [];
+  rollerCurtainData = json.rollerCurtainData || [];
 
-/* ══════════════════════════════════════════════════════════
-   DESIGN TOKENS
-══════════════════════════════════════════════════════════ */
-:root {
-  --g1:  #F2F2F7;
-  --g2:  #E5E5EA;
-  --g3:  #8E8E93;
-  --g4:  #1C1C1E;
+  // มู่ลี่ KDN
+  try {
+    const r1 = await fetch('blindsData.json');
+    if (r1.ok) blindKDN = await r1.json();
+  } catch {}
 
-  --ink:   var(--g4);
-  --ink-3: var(--g3);
-  --ink-4: #AEAEB2;
-  --sep:   rgba(0,0,0,0.08);
-
-  /* Glass surfaces */
-  --glass-bg:     rgba(255,255,255,0.68);
-  --glass-border: rgba(255,255,255,0.95);
-  --glass-shadow:
-    0 1px 0   rgba(255,255,255,0.90) inset,
-    0 -1px 0  rgba(0,0,0,0.04)       inset,
-    0 2px 8px  rgba(0,0,0,0.04),
-    0 8px 32px rgba(0,0,0,0.07);
-  --blur: blur(32px) saturate(200%);
-
-  /* Input glass */
-  --input-bg:     rgba(255,255,255,0.58);
-  --input-border: rgba(0,0,0,0.10);
-  --input-shadow:
-    0 1px 0 rgba(255,255,255,0.85) inset,
-    0 1px 3px rgba(0,0,0,0.06);
-
-  /* Accent */
-  --blue:      #007AFF;
-  --blue-soft: rgba(0,122,255,0.10);
-  --blue-ring: rgba(0,122,255,0.22);
-
-  /* Radii */
-  --r-xl:   22px;
-  --r-lg:   16px;
-  --r-md:   12px;
-  --r-sm:   9px;
-  --r-pill: 999px;
-
-  /* Motion */
-  --spring: cubic-bezier(0.34,1.56,0.64,1);
-  --ease-o: cubic-bezier(0.22,1,0.36,1);
-  --ease-i: cubic-bezier(0.4,0,1,1);
-  --t-f: 0.16s;
-  --t-m: 0.30s;
-  --t-s: 0.48s;
+  // มู่ลี่ KACEE (ชื่อไฟล์มีสระบน)
+  try {
+    const r2 = await fetch('ฺblindsDataKacee.json');
+    if (r2.ok) blindKACEE = await r2.json();
+  } catch {}
 }
 
-.dark {
-  --g1:  #1C1C1E;
-  --g2:  #3A3A3C;
-  --g3:  #636366;
-  --g4:  #F2F2F7;
-  --ink:   var(--g4);
-  --ink-3: var(--g3);
-  --ink-4: #48484A;
-  --sep:   rgba(255,255,255,0.07);
+/*******************************
+ * Utilities
+ *******************************/
+const $  = (sel, root=document) => root.querySelector(sel);
+const el = (tag, attrs={}) => Object.assign(document.createElement(tag), attrs);
 
-  --glass-bg:     rgba(36,36,38,0.78);
-  --glass-border: rgba(255,255,255,0.09);
-  --glass-shadow:
-    0 1px 0   rgba(255,255,255,0.06) inset,
-    0 -1px 0  rgba(0,0,0,0.30)       inset,
-    0 2px 10px rgba(0,0,0,0.50),
-    0 8px 32px rgba(0,0,0,0.55);
+const fmt = (n) => Number(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
 
-  --input-bg:     rgba(28,28,30,0.72);
-  --input-border: rgba(255,255,255,0.10);
-  --input-shadow:
-    0 1px 0 rgba(255,255,255,0.04) inset,
-    0 1px 3px rgba(0,0,0,0.30);
+/** แสดงตัวเลขขนาด:
+ * - ถ้าผู้ใช้พิมพ์ทศนิยม >= 3 ตำแหน่ง → แสดงเท่าที่พิมพ์ (สูงสุด 3)
+ * - อื่นๆ → แสดง 2 ตำแหน่ง
+*/
+const fmtSize = (val, inputEl) => {
+  if (val === '' || val == null || isNaN(val)) return 'สูงตามสั่ง';
+  const raw = (inputEl?.value ?? '').trim();
+  const dec = raw.includes('.') ? (raw.split('.')[1]?.length || 0) : 0;
+  const use = dec >= 3 ? Math.min(dec, 3) : 2;
+  return Number(val).toFixed(use);
+};
 
-  --blue:      #0A84FF;
-  --blue-soft: rgba(10,132,255,0.14);
-  --blue-ring: rgba(10,132,255,0.26);
-}
+const toNum = (v, d=0) => {
+  const n = parseFloat(v);
+  return isNaN(n) ? d : n;
+};
 
-/* ══════════════════════════════════════════════════════════
-   RESET + BACKGROUND
-══════════════════════════════════════════════════════════ */
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+function calcFabricMode(width,type,fabricWidth){
 
-html {
-  scroll-behavior: smooth;
-  min-height: 100vh;
-  background:
-    radial-gradient(ellipse 65% 50% at 15% 10%, rgba(120,150,220,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 45% at 85% 88%, rgba(150,100,220,0.09) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(180,200,255,0.06) 0%, transparent 70%),
-    #F2F2F7;
-}
-html.dark {
-  background:
-    radial-gradient(ellipse 65% 50% at 15% 10%, rgba(30,50,130,0.28) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 45% at 85% 88%, rgba(60,30,140,0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(0,20,80,0.15) 0%, transparent 70%),
-    #111113;
+let realWidth = width;
+
+if(type.includes("ม่านจีบ")){
+realWidth = width*2.3;
 }
 
-body {
-  font-family: 'Sarabun', sans-serif;
-  background: transparent;
-  color: var(--ink);
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 20px 120px;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  transition: color var(--t-m) var(--ease-o);
+if(type.includes("ม่านลอนเทป")){
+realWidth = width*2.7;
 }
 
-/* ══════════════════════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════════════════════ */
-.app-header { padding: 56px 0 40px; text-align: center; }
-.app-header h1 {
-  font-family: 'Outfit', sans-serif;
-  font-size: clamp(1.85rem,5.5vw,2.4rem);
-  font-weight: 300; letter-spacing: -0.6px; line-height: 1.15;
-  color: var(--g3);
-  transition: color var(--t-m) var(--ease-o);
-}
-.app-header h1 span { font-weight: 700; color: var(--g4); }
-.app-header .tagline {
-  margin-top: 8px; font-size: 13px;
-  color: var(--ink-4); letter-spacing: 0.3px;
-  transition: color var(--t-m) var(--ease-o);
-}
-.header-divider {
-  width: 32px; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--sep), transparent);
-  border-radius: 2px; margin: 18px auto 0;
+let limit = fabricWidth;
+
+if(fabricWidth==2.8){
+
+if(type.includes("ม่านลอนเทป")){
+limit = 2.7;
+}else{
+limit = 2.63;
 }
 
-/* ══════════════════════════════════════════════════════════
-   GLASS PANEL
-══════════════════════════════════════════════════════════ */
-.calculator {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: var(--r-xl);
-  padding: 18px; margin: 10px 0; position: relative;
-  transition:
-    background var(--t-m) var(--ease-o),
-    border-color var(--t-m) var(--ease-o),
-    box-shadow var(--t-m) var(--ease-o);
-}
-.calculator::before { display: none; }
-
-/* ══════════════════════════════════════════════════════════
-   ITEM CARDS
-══════════════════════════════════════════════════════════ */
-.item-card {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: var(--r-xl);
-  padding: 20px 20px 16px; margin: 10px 0;
-  position: relative; transform-origin: top center;
-  transition:
-    background var(--t-m) var(--ease-o),
-    border-color var(--t-m) var(--ease-o),
-    box-shadow var(--t-m) var(--ease-o);
-}
-/* Top edge highlight */
-.item-card::after {
-  content: '';
-  position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%, rgba(255,255,255,0.90) 30%,
-    rgba(255,255,255,0.90) 70%, transparent 100%);
-  pointer-events: none;
-}
-.dark .item-card::after {
-  background: linear-gradient(90deg,
-    transparent 0%, rgba(255,255,255,0.12) 30%,
-    rgba(255,255,255,0.12) 70%, transparent 100%);
-}
-.item-card:hover {
-  box-shadow:
-    0 1px 0   rgba(255,255,255,0.90) inset,
-    0 4px 16px rgba(0,0,0,0.07),
-    0 12px 40px rgba(0,0,0,0.09);
-}
-.dark .item-card:hover {
-  box-shadow:
-    0 1px 0   rgba(255,255,255,0.06) inset,
-    0 4px 16px rgba(0,0,0,0.55),
-    0 12px 40px rgba(0,0,0,0.60);
 }
 
-@keyframes cardEnter {
-  0%   { opacity:0; transform:scale(0.92) translateY(18px); filter:blur(8px); }
-  60%  { filter:blur(0); }
-  100% { opacity:1; transform:scale(1) translateY(0); filter:blur(0); }
-}
-.card-enter { animation: cardEnter var(--t-s) var(--spring) both; }
-
-@keyframes cardExit {
-  0%   { opacity:1; transform:scale(1) translateY(0); filter:blur(0); max-height:900px; margin:10px 0; padding:20px 20px 16px; }
-  50%  { filter:blur(5px); }
-  100% { opacity:0; transform:scale(0.90) translateY(-12px); filter:blur(12px); max-height:0; margin:0; padding:0; }
-}
-.card-exit { animation: cardExit var(--t-m) var(--ease-i) forwards; pointer-events:none; overflow:hidden; }
-
-.item-head { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; }
-.item-badge {
-  font-size:11px; font-weight:600; color:var(--g3);
-  background:rgba(142,142,147,0.09); border:1px solid rgba(142,142,147,0.18);
-  padding:3px 14px; border-radius:var(--r-pill); letter-spacing:0.2px;
-  transition: background var(--t-m) var(--ease-o), color var(--t-m) var(--ease-o);
-}
-.item-title { font-size:13px; color:var(--ink-3); }
-
-/* ══════════════════════════════════════════════════════════
-   BUTTONS — flat / simple (original style)
-══════════════════════════════════════════════════════════ */
-button {
-  appearance:none; -webkit-appearance:none;
-  border:none; cursor:pointer;
-  font-family:'Sarabun',sans-serif;
-  font-weight:600; font-size:13px;
-  padding:9px 16px; border-radius:var(--r-md);
-  background:var(--g4); color:var(--g1);
-  transition:
-    background var(--t-f) var(--ease-o),
-    opacity var(--t-f) var(--ease-o),
-    transform var(--t-f) var(--spring);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 4px 14px rgba(0,0,0,0.09);
-}
-button:hover  { opacity:0.85; transform:scale(1.012); }
-button:active { transform:scale(0.975); opacity:0.95; }
-
-/* Add Item */
-#addItemBtn {
-  width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
-  padding:12px 0; font-size:14px; border-radius:var(--r-lg);
-}
-#addItemBtn::before { content:'+'; font-size:19px; font-weight:300; }
-
-/* Copy */
-#copyBtn {
-  display:inline-flex; align-items:center; gap:7px;
-  padding:10px 22px; border-radius:var(--r-md);
-  font-size:13px;
+if(fabricWidth==3.2){
+limit = 3.0;
 }
 
-/* Ghost buttons */
-.action-btn,.half-btn,.full-btn,.hook-btn {
-  display:inline-flex; align-items:center; justify-content:center;
-  padding:6px 14px; border-radius:var(--r-sm);
-  background:rgba(142,142,147,0.08);
-  border:1px solid var(--g2);
-  color:var(--ink-3);
-  font-size:12px; font-weight:600; font-family:'Sarabun',sans-serif;
-  margin-left:5px; cursor:pointer;
-  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
-  box-shadow:0 1px 0 rgba(255,255,255,0.80) inset, 0 1px 3px rgba(0,0,0,0.06);
-  transition:
-    background var(--t-f) var(--ease-o),
-    color var(--t-f) var(--ease-o),
-    transform var(--t-f) var(--spring);
-}
-.dark .action-btn,.dark .half-btn,.dark .full-btn,.dark .hook-btn {
-  box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 1px 3px rgba(0,0,0,0.28);
-}
-.action-btn:hover,.half-btn:hover,.full-btn:hover,.hook-btn:hover {
-  background:rgba(142,142,147,0.16); color:var(--ink); transform:translateY(-1px);
-}
-.action-btn:active,.half-btn:active,.full-btn:active,.hook-btn:active { transform:scale(0.96); }
-
-/* Delete / Dup */
-.item-dup,.item-delete {
-  position:absolute; top:14px;
-  width:27px; height:27px; border-radius:var(--r-sm);
-  border:1px solid var(--sep);
-  background:rgba(249,249,249,0.70);
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  font-size:13px; color:var(--ink-3);
-  -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
-  box-shadow:0 1px 0 rgba(255,255,255,0.80) inset, 0 1px 4px rgba(0,0,0,0.07);
-  transition:
-    background var(--t-f) var(--ease-o),
-    transform var(--t-f) var(--spring),
-    color var(--t-f) var(--ease-o);
-}
-.dark .item-dup,.dark .item-delete {
-  background:rgba(58,58,60,0.70); border-color:var(--g2);
-  box-shadow:0 1px 0 rgba(255,255,255,0.05) inset, 0 1px 4px rgba(0,0,0,0.35);
-}
-.item-delete { right:14px; color:#FF3B30; background:rgba(255,59,48,0.09); border-color:rgba(255,59,48,0.18); }
-.dark .item-delete { color:#FF453A; }
-.item-delete:hover { background:rgba(255,59,48,0.17); transform:scale(1.1); }
-.item-dup { right:50px; }
-.item-dup:hover { background:rgba(142,142,147,0.14); transform:scale(1.1); }
-
-/* ══════════════════════════════════════════════════════════
-   INPUTS / SELECTS  — frosted glass
-══════════════════════════════════════════════════════════ */
-select, input[type="number"], input[type="text"] {
-  width:100%; padding:10px 13px;
-  border-radius:var(--r-md); border:1px solid var(--input-border);
-  background:var(--input-bg); color:var(--ink);
-  font-family:'Sarabun',sans-serif; font-size:14px;
-  outline:none; appearance:none; -webkit-appearance:none;
-  -webkit-backdrop-filter:blur(16px) saturate(160%);
-  backdrop-filter:blur(16px) saturate(160%);
-  box-shadow:var(--input-shadow);
-  transition:
-    border-color var(--t-f) var(--ease-o),
-    box-shadow var(--t-f) var(--ease-o),
-    background var(--t-m) var(--ease-o),
-    color var(--t-m) var(--ease-o);
-}
-.dark select,.dark input[type="number"],.dark input[type="text"] {
-  background:var(--input-bg); border-color:var(--input-border);
-}
-select {
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 L6 6.5 L11 1.5' stroke='%238E8E93' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 13px center;
-  padding-right:36px; cursor:pointer;
-}
-select:focus, input[type="number"]:focus, input[type="text"]:focus {
-  border-color:var(--blue);
-  box-shadow:0 0 0 3px var(--blue-ring), 0 1px 0 rgba(255,255,255,0.80) inset;
-  background:rgba(255,255,255,0.90);
-}
-.dark select:focus,.dark input[type="number"]:focus,.dark input[type="text"]:focus {
-  background:rgba(52,52,58,0.96);
-  box-shadow:0 0 0 3px var(--blue-ring), 0 1px 0 rgba(255,255,255,0.06) inset;
-}
-select:hover:not(:focus), input:hover:not(:focus) {
-  border-color:rgba(142,142,147,0.35);
-}
-select option { background:#fff; color:#1C1C1E; }
-.dark select option { background:#2C2C2E; color:#F2F2F7; }
-::placeholder { color:var(--g3); }
-
-/* ── Custom select trigger state when dropdown is open */
-select.csd-open {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-ring), 0 1px 0 rgba(255,255,255,0.80) inset;
-}
-.dark select.csd-open {
-  box-shadow: 0 0 0 3px var(--blue-ring), 0 1px 0 rgba(255,255,255,0.06) inset;
+if(fabricWidth==1.4){
+limit = 1.4;
 }
 
-/* ══════════════════════════════════════════════════════════
-   CUSTOM SELECT DROPDOWN OVERLAY
-══════════════════════════════════════════════════════════ */
-
-/* ── Backdrop */
-.csd-backdrop {
-  position: fixed; inset: 0; z-index: 8000;
-  background: rgba(0,0,0,0.00);
-  transition: background var(--t-m) var(--ease-o);
-  pointer-events: none;
-}
-.csd-backdrop.csd-visible {
-  background: rgba(0,0,0,0.18);
-  pointer-events: all;
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-}
-.dark .csd-backdrop.csd-visible {
-  background: rgba(0,0,0,0.40);
+return realWidth<=limit ? "ขวางผ้า" : "ต่อผ้า";
 }
 
-/* ── Panel */
-.csd-panel {
-  position: fixed; z-index: 8100;
-  min-width: 220px; max-width: 440px;
-  max-height: 72vh;
-  display: flex; flex-direction: column;
-  border-radius: var(--r-xl);
-  border: 1px solid rgba(255,255,255,0.88);
-  background: rgba(250,250,252,0.82);
-  -webkit-backdrop-filter: blur(48px) saturate(220%);
-  backdrop-filter: blur(48px) saturate(220%);
-  box-shadow:
-    0 2px 0 rgba(255,255,255,0.90) inset,
-    0 -1px 0 rgba(0,0,0,0.06) inset,
-    0 8px 32px rgba(0,0,0,0.14),
-    0 32px 80px rgba(0,0,0,0.10),
-    0 0 0 0.5px rgba(0,0,0,0.06);
-  overflow: hidden;
-  /* Start hidden */
-  opacity: 0;
-  transform: scale(0.88) translateY(-8px);
-  transform-origin: top center;
-  transition:
-    opacity 0.22s var(--ease-o),
-    transform 0.28s var(--spring);
-  pointer-events: none;
+function calcJoinFabricCost(width,height,fabricWidth,pricePerYard,qty,type){
+
+const seamRate = 100;
+const profit = 1.7;
+
+let realWidth;
+
+// ตาไก่ / ซ่อนหู / คอกระเช้า / ลอนตะขอ / ลอนโซ่ / สอด
+if(
+type.includes("ตาไก่") ||
+type.includes("ซ่อนหู") ||
+type.includes("คอกระเช้า") ||
+type.includes("ลอนตะขอ") ||
+type.includes("ลอนโซ่") ||
+type.includes("สอด")
+){
+realWidth = width + 0.15;
 }
-.dark .csd-panel {
-  background: rgba(44,44,48,0.88);
-  border-color: rgba(255,255,255,0.10);
-  box-shadow:
-    0 2px 0 rgba(255,255,255,0.07) inset,
-    0 -1px 0 rgba(0,0,0,0.30) inset,
-    0 8px 32px rgba(0,0,0,0.55),
-    0 32px 80px rgba(0,0,0,0.45),
-    0 0 0 0.5px rgba(255,255,255,0.06);
+else if(type.includes("จีบ")){
+realWidth = width * 2.3;
 }
-.csd-panel.csd-visible {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: all;
+else if(type.includes("ลอน")){
+realWidth = width * 2.7;
+}
+else{
+realWidth = width;
 }
 
-/* ── Panel: open from bottom on mobile */
-@media (max-width: 600px) {
-  .csd-panel {
-    left: 12px !important; right: 12px !important;
-    bottom: 12px !important; top: auto !important;
-    max-width: none; min-width: 0; width: auto;
-    max-height: 65vh;
-    border-radius: var(--r-xl) var(--r-xl) var(--r-xl) var(--r-xl);
-    transform: scale(0.96) translateY(32px);
-    transform-origin: bottom center;
+// จำนวนชิ้น (สูตรตาม Excel)
+let pieces;
+
+if(realWidth <= 2.8){
+pieces = 1;
+}
+else if(realWidth <= fabricWidth){
+pieces = 1;
+}
+else{
+pieces = Math.ceil(realWidth / fabricWidth);
+}
+
+// ความสูงผ้า
+const fabricHeight = height + 0.3;
+
+// เมตรผ้า
+const totalMeter = pieces * fabricHeight;
+
+// แปลงหลา
+const yards = Math.ceil(totalMeter / 0.9);
+
+// ต้นทุนผ้า
+const fabricCost = yards * pricePerYard;
+
+// ค่าเย็บพื้นฐาน
+const sewCost = realWidth * seamRate;
+
+// ต้นทุนรวม
+const totalCost = fabricCost + sewCost;
+
+// ราคาขาย
+return totalCost * profit * qty;
+
+}
+
+function getFabricYardPrice(ftype){
+
+// blackout
+if(ftype.includes("Blackout") && ftype.includes("สูงพิเศษ")) return 230;
+if(ftype.includes("Blackout")) return 180;
+
+// dimout
+if(ftype.includes("Dimout") && ftype.includes("สูงพิเศษ")) return 150;
+if(ftype.includes("Dimout")) return 130;
+
+// sheer
+if(ftype.includes("โปร่งหนาพิเศษ")) return 80;
+if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 80;
+if(ftype.includes("โปร่ง")) return 60;
+
+return 130;
+
+}
+
+function getDefaultFabricWidth(ftype){
+
+// Blackout
+if(ftype.includes("Blackout") && ftype.includes("สูงพิเศษ")) return 3.2;
+if(ftype.includes("Blackout")) return 3.2;
+
+// Dimout
+if(ftype.includes("Dimout") && ftype.includes("สูงพิเศษ")) return 3.2;
+if(ftype.includes("Dimout")) return 2.8;
+
+// Linen
+if(ftype.includes("ลินิน")) return 2.8;
+
+// Sheer
+if(ftype.includes("โปร่งหนาพิเศษ")) return 3.2;
+if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 3.2;
+if(ftype.includes("โปร่ง")) return 2.8;
+
+return 2.8;
+
+}
+
+
+// ปัดสำหรับ lookup ตารางมู่ลี่: ถ้าใส่ทศนิยม "สองตำแหน่ง" ให้ปัดที่หลักร้อย (2nd decimal)
+// 0-4 ลง, 5-9 ขึ้น -> ให้ได้ค่าเป็น "ทศนิยม 1 ตำแหน่ง"
+function lookupTenthByHundredths(rawStr) {
+  if (rawStr == null) return NaN;
+  const s = String(rawStr).trim();
+  if (!s) return NaN;
+  if (!s.includes('.')) return parseFloat(s);
+
+  const [intPart, decPartRaw=''] = s.split('.');
+  const decPart = decPartRaw.replace(/\D/g,''); // กัน user ใส่คอมมา/ตัวอักษร
+
+  if (decPart.length === 2) {
+    const tenth = parseInt(decPart[0] || '0', 10);     // หลักทศนิยมที่ 1
+    const hund  = parseInt(decPart[1] || '0', 10);     // หลักทศนิยมที่ 2
+    let val = parseFloat(`${intPart}.${tenth}`);
+    if (!isNaN(hund) && hund >= 5) val += 0.1;
+    // บีบให้ได้ step 0.1 แบบสวย ๆ
+    return Math.round(val * 10) / 10;
   }
-  .csd-panel.csd-visible {
-    transform: scale(1) translateY(0);
+
+  // กรณีอื่น ๆ ไม่บังคับปัด (ให้เป็นค่าที่ผู้ใช้ใส่มา)
+  return parseFloat(s);
+}
+
+
+// --- Auto summary (debounce) ---
+let _sumT = null;
+function autoSummarize(now = false){
+  if (now) { summarizeAllItems(); return; }
+  clearTimeout(_sumT);
+  _sumT = setTimeout(summarizeAllItems, 150);
+}
+
+/*******************************
+ * ป้ายชื่อรวม “ชนิดม่าน + เนื้อผ้า”
+ *******************************/
+function makeComboLabel(ct, ft) {
+  const esc = s => (s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const hasHigh = /สูงพิเศษ/i.test(ct) || /สูงพิเศษ/i.test(ft);
+  const baseCt = (ct || '').replace(/\s*สูงพิเศษ/gi, '').trim();
+  let f = (ft || '')
+    .replace(new RegExp(esc(baseCt), 'gi'), '')
+    .replace(/ม่านตาไก่|ม่านจีบ|ม่านลอน(?:เทป|ตะขอ)?|ม่านซ่อนหู/gi, '')
+    .replace(/\s*สูงพิเศษ/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!f) f = (ft || '').replace(/\s*สูงพิเศษ/gi, '').trim();
+  const label = `${baseCt} ${f}`.replace(/\s+/g, ' ').trim();
+  return hasHigh ? `${label} สูงพิเศษ` : label;
+}
+function baseType(ct) {
+  return String(ct || '').replace(/\s*สูงพิเศษ/gi, '').trim();
+}
+function bindAuto(el, fn) {
+  if (!el) return;
+  const handler = () => { fn(); autoSummarize(); };
+  el.addEventListener('input',  handler);
+  el.addEventListener('change', handler);
+}
+
+/*******************************
+ * รวมตัวเลือกบนสุดของการ์ด
+ *******************************/
+function getCurtainCombos() {
+  const rows = curtainData.filter(r => r.curtainType && r.fabricType && typeof r.price === 'number');
+  const uniq = new Map();
+  for (const r of rows) {
+    const label = makeComboLabel(r.curtainType, r.fabricType);
+    const value = `CURTAIN|${r.curtainType}|${r.fabricType}`;
+    if (!uniq.has(value)) uniq.set(value, { label, value });
+  }
+  const extra = [
+    { label: 'มู่ลี่ไม้', value: 'WOOD_BLIND' },
+    { label: 'มู่ลี่ KDN (อลูมิเนียม STE)', value: 'KDN_BLIND' },
+    { label: 'มู่ลี่ KACEE (อลูมิเนียม KC)', value: 'KACEE_BLIND' },
+    { label: 'ม่านพับ (Dimout)', value: 'ROMAN|Dimout' },
+    { label: 'ม่านพับ (Blackout)', value: 'ROMAN|Blackout' },
+    { label: 'ม่านพับ (Sheer)', value: 'ROMAN|Sheer' },
+    { label: 'ม่านม้วน Blackout', value: 'ROLLER|Blackout' },
+{ label: 'ม่านม้วน 3%', value: 'ROLLER|3%' },
+{ label: 'ม่านม้วน 1%', value: 'ROLLER|1%' },
+{ label: 'มุ้งจีบ Luxury กันยุง (ราคาลูกค้าออนไลน์)', value: 'MOSQ|LUXURY' },
+{ label: 'มุ้งจีบนิรภัย (ราคาลูกค้าออนไลน์)', value: 'MOSQ|SAFE' },
+{ label: 'มุ้งจีบ P-net หนาพิเศษ (ราคาลูกค้างานติดตั้ง)', value: 'MOSQ|PNET' },
+  ];
+  return [...uniq.values(), ...extra];
+}
+
+/*******************************
+ * การแม็ปชนิดม่าน → ตัวเลือกย่อย
+ *******************************/
+const STYLE_MAP = {
+  'ม่านตาไก่':     { rail: /ตาไก่/,       sheer: /ตาไก่/ },
+  'ม่านจีบ':       { rail: /จีบ/,         sheer: /จีบ/ },
+  'ม่านซ่อนหู':    { rail: /ตาไก่/,       sheer: /ซ่อนหู/ },
+  'ม่านลอนเทป':    { rail: /ลอน|snake/i,  sheer: /ลอนเทป/ },
+  'ม่านลอนตะขอ':   { rail: /จีบ/,         sheer: /ลอนตะขอ/ },
+  'ม่านคอกระเช้า': { rail: /ตาไก่/,       sheer: /คอกระเช้า/ },
+  'ม่านสอด':       { rail: /ตาไก่/,       sheer: /สอด/ },
+  'ม่านลอนโซ่':    { rail: /ลอนโซ่/,      sheer: /ลอนโซ่/ },
+};
+
+function getRailsForType(curtainType) {
+  const key = baseType(curtainType);
+  const rule = STYLE_MAP[key]?.rail;
+  let rails = rule
+    ? railData.filter(r => rule.test(r.railType || '') || rule.test(r.rail || ''))
+    : [];
+  if (/ม่านจีบ/.test(key) || /ม่านลอน/.test(key)) {
+    const eyelet = railData.filter(r => /ตาไก่/.test(r.railType || '') || /ตาไก่/.test(r.rail || ''));
+    for (const e of eyelet) if (!rails.some(x => x.rail === e.rail)) rails.push(e);
+  }
+  return rails;
+}
+function getOpaqueOptions(curtainType) {
+  const key = baseType(curtainType);
+  return curtainData.filter(r => {
+    const ct = baseType(r.curtainType);
+    if (/^ม่านลอนเทป$/.test(key))      return /^ม่านลอนเทป$/.test(ct);
+    if (/^ม่านลอนตะขอ$/.test(key))     return /^ม่านลอนตะขอ$/.test(ct);
+    if (/^ม่านลอนโซ่$/.test(key))      return /^ม่านลอนโซ่$/.test(ct);
+    if (/^ม่านคอกระเช้า$/.test(key))   return /^ม่านคอกระเช้า$/.test(ct);
+    if (/^ม่านซ่อนหู$/.test(key))      return /^ม่านซ่อนหู$/.test(ct);
+    if (/^ม่านสอด$/.test(key))         return /^ม่านสอด$/.test(ct);
+    return ct === key;
+  });
+}
+function getSheerOptions(curtainType) {
+  const key = baseType(curtainType);
+  const rule = STYLE_MAP[key]?.sheer;
+  return rule
+    ? sheerCurtainData.filter(s => rule.test(s.sheerCurtainType || '') || rule.test(s.sheerFabricType || ''))
+    : [];
+}
+
+/*******************************
+ * มู่ลี่อลูมิเนียม: อ่านราคาจากตาราง
+ *******************************/
+function matrixPrice(blindJson, modelKey, width, height) {
+  if (!blindJson?.blinds?.[modelKey]) return null;
+  const blk = blindJson.blinds[modelKey];
+  const W = blk.widths || [];
+  const H = blk.heights || [];
+  const P = blk.prices || []; // P[hi][wi]
+  const round2 = (x) => Math.round(x * 100) / 100;
+  const wi = W.findIndex(v => round2(v) === round2(width));
+  const hi = H.findIndex(v => round2(v) === round2(height));
+  if (wi < 0 || hi < 0) return null;
+  if (!P[hi] || typeof P[hi][wi] !== 'number') return null;
+  return P[hi][wi];
+}
+
+/*******************************
+ * การ์ดรายการ + สถานะ
+ *******************************/
+let nextId = 1;
+const items = new Map(); // id -> { rail, opaque, sheer, wood, kdn, kacee, roman }
+
+function addItem(){
+  const id = nextId++;
+  const card = el('div', { className:'item-card', id:`item-${id}` });
+
+  // ===== หัวการ์ด: select หลัก + ปุ่มลบ/ทำซ้ำ =====
+  const head = el('div', { className:'item-head' });
+  const combo = el('select', { id:`combo-${id}`, className:'combo-full' });
+  const comboOpts = getCurtainCombos();
+  combo.innerHTML =
+    `<option value="">เลือกแบบม่าน</option>` +
+    comboOpts.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+  combo.onchange = () => { hydrateCard(id); autoSummarize(); };
+
+  const del  = el('button', { className:'item-delete', title:'ลบ', innerText:'×' });
+  del.onclick = () => { items.delete(id); card.remove(); autoSummarize(true); };
+
+  const dup  = el('button', { className:'item-dup', title:'ทำซ้ำ', innerText:'⧉' });
+  dup.onclick = () => duplicateItem(id);
+
+  head.append(combo, del, dup);
+
+  // ===== SECTION: CURTAIN (ราง/ม่านทึบ/ม่านโปร่ง) =====
+  const secCurtain = el('ul', { className:'bullet-list', id:`sec-curtain-${id}` });
+  secCurtain.append(rowRail(id), rowOpaque(id), rowSheer(id));
+
+  // ===== SECTION: WOOD BLIND =====
+  const secWood = el('div', { className:'alt-box', id:`sec-wood-${id}`, style:'display:none' });
+  secWood.innerHTML = `
+    <div class="alt-row">
+      <div class="form-group"><label>กว้าง (เมตร):</label><input type="number" id="wb-w-${id}" min="0" step="0.01" placeholder="เช่น 1.00"></div>
+      <div class="form-group"><label>สูง (เมตร):</label><input type="number" id="wb-h-${id}" min="0" step="0.01" placeholder="เช่น 2.00"></div>
+      <div class="form-group"><label>จำนวนชุด:</label><input type="number" id="wb-q-${id}" min="1" value="1"></div>
+      <div class="price-box" id="wb-price-${id}"></div>
+    </div>
+  `;
+  function recalcWood(){
+    const w = toNum($(`#wb-w-${id}`).value);
+    const h = toNum($(`#wb-h-${id}`).value);
+    const q = Math.max(1, toNum($(`#wb-q-${id}`).value, 1));
+    if (!w || !h) { $(`#wb-price-${id}`).textContent=''; items.get(id).wood=0; return; }
+    let unit = w*h*1.2*1290;
+    if (unit < 1548) unit = 1548;
+    const total = unit*q;
+    $(`#wb-price-${id}`).textContent = fmt(total) + ' บาท';
+    items.get(id).wood = total;
+  }
+  setTimeout(() => {
+    bindAuto($(`#wb-w-${id}`), recalcWood);
+    bindAuto($(`#wb-h-${id}`), recalcWood);
+    bindAuto($(`#wb-q-${id}`), recalcWood);
+  });
+
+  setTimeout(()=>{
+
+
+});
+
+  // ===== SECTION: ALUMINUM BLIND (KDN / KACEE) =====
+  const secAlu = el('div', { className:'alt-box', id:`sec-alu-${id}`, style:'display:none' });
+  secAlu.innerHTML = `
+    <div class="form-group">
+      <label>รุ่นมู่ลี่:</label>
+      <select id="alu-model-${id}">
+        <option value="KDN">มู่ลี่ KDN (STE)</option>
+        <option value="KACEE">มู่ลี่ KACEE (KC)</option>
+      </select>
+    </div>
+    <div class="alt-row">
+      <div class="form-group"><label>กว้าง (เมตร):</label><input type="number" id="alu-w-${id}" min="0" step="0.01" placeholder="เช่น 1.20"></div>
+      <div class="form-group"><label>สูง (เมตร):</label><input type="number" id="alu-h-${id}" min="0" step="0.01" placeholder="เช่น 1.20"></div>
+      <div class="form-group"><label>จำนวนชุด:</label><input type="number" id="alu-q-${id}" min="1" value="1"></div>
+      <div class="price-box" id="alu-price-${id}"></div>
+    </div>
+    <div class="note">* ขนาดต้องตรงกับช่วงในตารางราคา</div>
+  `;
+ function recalcAlu(){
+  const model = $(`#alu-model-${id}`).value; // KDN | KACEE
+  const wStr = $(`#alu-w-${id}`).value;
+  const hStr = $(`#alu-h-${id}`).value;
+  const q = Math.max(1, toNum($(`#alu-q-${id}`).value, 1));
+
+  const wDisplay = toNum(wStr);
+  const hDisplay = toNum(hStr);
+  if (!wDisplay || !hDisplay) {
+    $(`#alu-price-${id}`).textContent='';
+    const st=items.get(id); st.kdn=0; st.kacee=0; 
+    return;
+  }
+
+  // ใช้ rule ปัดเฉพาะตอน "เทียบราคาในตาราง"
+  const wLookup = lookupTenthByHundredths(wStr);
+  const hLookup = lookupTenthByHundredths(hStr);
+
+  const data = (model==='KDN') ? blindKDN : blindKACEE;
+  const key  = (model==='KDN') ? 'KDN_25mm' : 'KACEE_25_35_50mm';
+  const price = matrixPrice(data, key, wLookup, hLookup);
+
+
+  if (price == null) {
+    $(`#alu-price-${id}`).textContent='';
+    const st=items.get(id); st.kdn=0; st.kacee=0; 
+    return;
+  }
+
+  const total = price * q;
+  $(`#alu-price-${id}`).textContent = fmt(total) + ' บาท';
+
+  const st = items.get(id);
+  if (model==='KDN'){ st.kdn = total; st.kacee = 0; } else { st.kacee = total; st.kdn = 0; }
+}
+
+  setTimeout(() => {
+    bindAuto($(`#alu-model-${id}`), recalcAlu);
+    bindAuto($(`#alu-w-${id}`),     recalcAlu);
+    bindAuto($(`#alu-h-${id}`),     recalcAlu);
+    bindAuto($(`#alu-q-${id}`),     recalcAlu);
+  });
+
+  // ===== SECTION: ROMAN (ม่านพับ) =====
+  const secRoman = el('div', { className:'alt-box', id:`sec-roman-${id}`, style:'display:none' });
+  secRoman.innerHTML = `
+    <div class="form-group">
+      <label>ผ้าม่านพับ:</label>
+      <select id="roman-fabric-${id}">
+        <option value="Dimout">Dimout (1250/ม. ขั้นต่ำ 950)</option>
+        <option value="Blackout">Blackout (1290/ม. ขั้นต่ำ 990)</option>
+        <option value="Sheer">Sheer (1200/ม. ขั้นต่ำ 900)</option>
+      </select>
+    </div>
+    <div class="alt-row">
+      <div class="form-group"><label>กว้าง (เมตร):</label><input type="number" id="roman-w-${id}" min="0" step="0.01" placeholder="เช่น 1.00"></div>
+      <div class="form-group"><label>จำนวนชุด:</label><input type="number" id="roman-q-${id}" min="1" value="1"></div>
+      <div class="form-group check"><label><input type="checkbox" id="roman-norail-${id}"> ไม่รับราง (ลด 150)</label></div>
+      <div class="price-box" id="roman-price-${id}"></div>
+    </div>
+    <div class="note">* ความสูงไม่มีผลต่อราคา ใช้เพื่อสรุปรายการเท่านั้น</div>
+  `;
+  function recalcRoman(){
+    const fabric = $(`#roman-fabric-${id}`).value;
+    const w = toNum($(`#roman-w-${id}`).value);
+    const q = Math.max(1, toNum($(`#roman-q-${id}`).value, 1));
+    const norail = $(`#roman-norail-${id}`).checked;
+    if (!w) { $(`#roman-price-${id}`).textContent=''; items.get(id).roman = 0; return; }
+    const rate  = (fabric==='Blackout') ? 1290 : (fabric==='Sheer' ? 1200 : 1250);
+    const floor = (fabric==='Blackout') ? 990  : (fabric==='Sheer' ? 900  : 950);
+    let perSet = Math.max(rate*w, floor);
+    if (norail) perSet = Math.max(0, perSet - 150);
+    const total = perSet*q;
+    $(`#roman-price-${id}`).textContent = fmt(total) + ' บาท';
+    items.get(id).roman = total;
+  }
+  setTimeout(() => {
+    bindAuto($(`#roman-fabric-${id}`), recalcRoman);
+    bindAuto($(`#roman-w-${id}`),      recalcRoman);
+    bindAuto($(`#roman-q-${id}`),      recalcRoman);
+    bindAuto($(`#roman-norail-${id}`), recalcRoman);
+  });
+
+  // ===== SECTION: ROLLER =====
+const secRoller = el('div', { className:'alt-box', id:`sec-roller-${id}`, style:'display:none' });
+
+secRoller.innerHTML = `
+<div class="alt-row">
+<div class="form-group">
+<label>กว้าง (เมตร):</label>
+<input type="number" id="roller-w-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>สูง (เมตร):</label>
+<input type="number" id="roller-h-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>จำนวนชุด:</label>
+<input type="number" id="roller-q-${id}" value="1">
+</div>
+
+<div class="price-box" id="roller-price-${id}"></div>
+</div>
+`;
+function recalcRoller(){
+
+const comboVal = $(`#combo-${id}`).value;
+const percent = comboVal.split('|')[1];
+
+const data = rollerCurtainData.find(r=>r.percent===percent);
+const price = data ? data.price : 0;
+
+const w = toNum($(`#roller-w-${id}`).value);
+const h = toNum($(`#roller-h-${id}`).value);
+const q = Math.max(1,toNum($(`#roller-q-${id}`).value,1));
+
+if(!w || !h || !price){
+  $(`#roller-price-${id}`).textContent='';
+  items.get(id).roller = 0;
+  autoSummarize();
+  return;
+}
+
+const total = w*h*price*q;
+
+$(`#roller-price-${id}`).textContent =
+fmt(total)+' บาท';
+
+items.get(id).roller = total;
+autoSummarize();
+}
+
+setTimeout(()=>{
+
+bindAuto($(`#roller-w-${id}`),recalcRoller);
+bindAuto($(`#roller-h-${id}`),recalcRoller);
+bindAuto($(`#roller-q-${id}`),recalcRoller);
+
+});
+
+
+const secMosq = el('div', { className:'alt-box', id:`sec-mosq-${id}`, style:'display:none' });
+
+secMosq.innerHTML = `
+<div class="form-group">
+<label>รูปแบบ:</label>
+<select id="mosq-type-${id}">
+<option value="center">แยกกลาง</option>
+<option value="single">สไลด์เดี่ยว</option>
+</select>
+</div>
+
+<div class="alt-row">
+<div class="form-group">
+<label>กว้าง (เมตร):</label>
+<input type="number" id="mosq-w-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>สูง (เมตร):</label>
+<input type="number" id="mosq-h-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>จำนวนชุด:</label>
+<input type="number" id="mosq-q-${id}" value="1">
+</div>
+
+<div class="price-box" id="mosq-price-${id}"></div>
+</div>
+`;
+function recalcMosq(){
+
+const combo = $(`#combo-${id}`).value;
+const brand = combo.split('|')[1];
+
+const type = $(`#mosq-type-${id}`).value;
+
+const w = toNum($(`#mosq-w-${id}`).value);
+const h = toNum($(`#mosq-h-${id}`).value);
+const q = Math.max(1,toNum($(`#mosq-q-${id}`).value,1));
+
+if(!w || !h){
+  $(`#mosq-price-${id}`).textContent='';
+  items.get(id).mosq=0;
+  autoSummarize();
+  return;
+}
+
+let price=0;
+
+if(brand==="LUXURY"){
+  price=1400;
+}
+
+if(brand==="SAFE"){
+  price = (type==="center") ? 2500 : 1400;
+}
+
+if(brand==="PNET"){
+  price=1500;
+}
+
+const total = w*h*price*q;
+
+$(`#mosq-price-${id}`).textContent = fmt(total)+' บาท';
+
+items.get(id).mosq = total;
+
+autoSummarize();
+}
+
+setTimeout(()=>{
+bindAuto($(`#mosq-w-${id}`),recalcMosq);
+bindAuto($(`#mosq-h-${id}`),recalcMosq);
+bindAuto($(`#mosq-q-${id}`),recalcMosq);
+bindAuto($(`#mosq-type-${id}`),recalcMosq);
+});
+
+  // ===== FOOTER: ความสูงรวม (เพื่อสรุป) =====
+  const foot = el('div', { className:'item-footer' });
+  const hGroup = el('div', { className:'form-group grow' });
+  hGroup.innerHTML = `<label>ความสูง (เมตร):</label><input type="number" id="h-${id}" min="0" step="0.01" placeholder="สูงตามสั่ง">`;
+  foot.append(hGroup);
+
+  // ประกอบการ์ด
+card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, foot);
+  $('#itemsContainer').append(card);
+
+  setTimeout(() => {
+    const hEl = document.querySelector(`#h-${id}`);
+    if (!hEl) return;
+    ['input','change','keyup','blur'].forEach(ev => {
+      hEl.addEventListener(ev, summarizeAllItems);
+    });
+  });
+
+  // init state
+  items.set(id, { rail:0, opaque:0, sheer:0, wood:0, kdn:0, kacee:0, roman:0, roller:0, mosq:0 });
+
+  // สรุปทันทีเมื่อเพิ่มการ์ด
+  autoSummarize(true);
+  return id;
+}
+
+/********************************
+ * แถวใช้งานสำหรับ CURTAIN mode
+ ********************************/
+function rowRail(id){
+  const li = el('li', { className:'bullet-row' });
+  const right = el('div', { className:'bullet-right' });
+
+  const selGrp = el('div', { className:'form-group' });
+  selGrp.innerHTML = `<label>เลือกราง:</label><select id="rail-${id}" disabled></select>`;
+
+  const widthGrp = el('div', { className:'form-group' });
+  widthGrp.innerHTML = `<label>ความยาว (เมตร):</label><input type="number" id="rw-${id}" min="0" step="0.01" placeholder="เช่น 2.00">`;
+
+  const qtyGrp = el('div', { className:'form-group' });
+  qtyGrp.innerHTML = `<label>จำนวน:</label><input type="number" id="rq-${id}" min="1" value="1">`;
+
+  const price = el('div', { className:'price-box', id:`rp-${id}` });
+
+  function recalc(){
+    const sel = $(`#rail-${id}`);
+    const r = railData.find(x => x.rail === sel.value);
+    const w = toNum($(`#rw-${id}`).value);
+    const q = Math.max(1, toNum($(`#rq-${id}`).value, 1));
+    if (!r || !w) { $(`#rp-${id}`).textContent = ''; items.get(id).rail = 0; return; }
+    const val = r.price * w * q;
+    $(`#rp-${id}`).textContent = fmt(val) + ' บาท';
+    items.get(id).rail = val;
+  }
+
+  right.append(selGrp, widthGrp, qtyGrp, price);
+  li.append(right);
+
+  setTimeout(() => {
+    bindAuto($(`#rail-${id}`), recalc);
+    bindAuto($(`#rw-${id}`),   recalc);
+    bindAuto($(`#rq-${id}`),   recalc);
+  });
+
+  setTimeout(()=>{
+
+const chk1 = document.querySelector(`#overheight-opaque-${id}`);
+const chk2 = document.querySelector(`#overheight-sheer-${id}`);
+const box  = document.querySelector(`#fabricBox-${id}`);
+
+function toggleFabric(){
+
+if(!box) return;
+
+if((chk1 && chk1.checked) || (chk2 && chk2.checked)){
+box.style.display = 'inline-block';
+}else{
+box.style.display = 'none';
+}
+
+}
+
+if(chk1) chk1.addEventListener('change',toggleFabric);
+if(chk2) chk2.addEventListener('change',toggleFabric);
+
+});
+
+  return li;
+}
+
+function rowOpaque(id){
+  const li = el('li', { className:'bullet-row' });
+  const right = el('div', { className:'bullet-right' });
+
+  const selGrp = el('div', { className:'form-group' });
+  selGrp.innerHTML = `<label>สไตล์+ผ้า:</label><select id="op-${id}" disabled></select>`;
+
+  const widthGrp = el('div', { className:'form-group' });
+  widthGrp.innerHTML = `<label>ความกว้าง (เมตร):</label><input type="number" id="ow-${id}" min="0" step="0.01" placeholder="เช่น 2.00">`;
+
+  const qtyGrp = el('div', { className:'form-group' });
+  qtyGrp.innerHTML = `<label>จำนวนผืน:</label><input type="number" id="oq-${id}" min="1" value="2">`;
+
+  const price = el('div', { className:'price-box', id:`oprice-${id}` });
+
+  const overBox = el('div',{className:'form-group check',style:'display:flex;align-items:center;gap:6px;'});
+overBox.innerHTML = `
+<label>
+<input type="checkbox" id="overheight-opaque-${id}">
+สูงเกินหน้าผ้า
+</label>
+`;
+
+const fabricSel = el('span',{
+id:`fabricWidthOpaqueBox-${id}`,
+style:'display:none;margin-left:6px;'
+});
+
+fabricSel.innerHTML=`
+<select id="fabricWidthOpaque-${id}" style="width:70px">
+<option value="1.4">1.4</option>
+<option value="2.8">2.8</option>
+<option value="3.2">3.2</option>
+</select>
+`;
+
+overBox.append(fabricSel);
+
+setTimeout(()=>{
+
+const chk = document.querySelector(`#overheight-opaque-${id}`);
+const box = document.querySelector(`#fabricWidthOpaqueBox-${id}`);
+
+if(chk){
+chk.addEventListener('change',()=>{
+
+box.style.display = chk.checked ? 'inline-block' : 'none';
+
+if(chk.checked){
+
+const valStr = $(`#op-${id}`).value;
+const [ctype, ftype] = (valStr || '').split('|');
+
+const def = getDefaultFabricWidth(ftype);
+
+$(`#fabricWidthOpaque-${id}`).value = def;
+
+}
+
+recalc();
+
+});
+}
+
+});
+
+
+function recalc(){
+
+const valStr = $(`#op-${id}`).value;
+const [ctype, ftype] = (valStr || '').split('|');
+
+const row = curtainData.find(
+x => x.curtainType === ctype && x.fabricType === ftype
+);
+
+const w = toNum($(`#ow-${id}`).value);
+const h = toNum($(`#h-${id}`)?.value);
+const q = Math.max(1,toNum($(`#oq-${id}`).value,2));
+
+if(!row || !w){
+$(`#oprice-${id}`).textContent='';
+items.get(id).opaque = 0;
+return;
+}
+
+// ราคาปกติ
+let val = row.price * w * q;
+
+const over = $(`#overheight-opaque-${id}`)?.checked;
+
+if(!over){
+  delete items.get(id).fabricMode;
+}
+
+if(over && h){
+
+const fabricWidth = parseFloat($(`#fabricWidthOpaque-${id}`).value);
+
+// เช็คขวางผ้าหรือ ต่อผ้า
+const mode = calcFabricMode(w,row.curtainType,fabricWidth);
+
+items.get(id).fabricMode = mode;
+
+if(mode === "ต่อผ้า" || mode === "ขวางผ้า"){
+
+const pricePerMeter = getFabricYardPrice(ftype);
+
+val = calcJoinFabricCost(
+w,
+h,
+fabricWidth,
+pricePerMeter,
+q,
+ctype
+);
+
+}
+
+}
+
+$(`#oprice-${id}`).textContent = fmt(val) + ' บาท';
+
+items.get(id).opaque = val;
+
+autoSummarize(); 
+
+}
+
+
+right.append(selGrp, widthGrp, qtyGrp, price, overBox);
+  li.append(right);
+
+ setTimeout(() => {
+  bindAuto($(`#op-${id}`), recalc);
+  bindAuto($(`#ow-${id}`), recalc);
+  bindAuto($(`#oq-${id}`), recalc);
+  bindAuto($(`#h-${id}`),  recalc);
+  bindAuto($(`#fabricWidthOpaque-${id}`), recalc);
+});
+
+  return li;
+}
+
+function rowSheer(id){
+  const li = el('li', { className:'bullet-row' });
+  const right = el('div', { className:'bullet-right' });
+
+  const selGrp = el('div', { className:'form-group' });
+  selGrp.innerHTML = `<label>ชนิดผ้าโปร่ง:</label><select id="sh-${id}" disabled></select>`;
+
+  const widthGrp = el('div', { className:'form-group' });
+  widthGrp.innerHTML = `<label>ความกว้าง (เมตร):</label><input type="number" id="sw-${id}" min="0" step="0.01" placeholder="เช่น 2.00">`;
+
+  const qtyGrp = el('div', { className:'form-group' });
+  qtyGrp.innerHTML = `<label>จำนวนผืน:</label><input type="number" id="sq-${id}" min="1" value="2">`;
+
+  const price = el('div', { className:'price-box', id:`sprice-${id}` });
+
+  const overBox = el('div',{className:'form-group check',style:'display:flex;align-items:center;gap:6px;'});
+overBox.innerHTML = `
+<label>
+<input type="checkbox" id="overheight-sheer-${id}">
+สูงเกินหน้าผ้า
+</label>
+`;
+
+const fabricSel = el('span',{
+id:`fabricWidthSheerBox-${id}`,
+style:'display:none;margin-left:6px;'
+});
+
+fabricSel.innerHTML=`
+<select id="fabricWidthSheer-${id}" style="width:70px">
+<option value="1.4">1.4</option>
+<option value="2.8">2.8</option>
+<option value="3.2">3.2</option>
+</select>
+`;
+
+overBox.append(fabricSel);
+
+setTimeout(()=>{
+
+const chk = document.querySelector(`#overheight-sheer-${id}`);
+const box = document.querySelector(`#fabricWidthSheerBox-${id}`);
+
+if(chk){
+chk.addEventListener('change',()=>{
+
+box.style.display = chk.checked ? 'inline-block' : 'none';
+
+if(chk.checked){
+
+const type = $(`#sh-${id}`).value;
+
+const def = getDefaultFabricWidth(type);
+
+$(`#fabricWidthSheer-${id}`).value = def;
+
+}
+
+recalc();
+
+});
+}
+
+});
+
+  function recalc(){
+    const type = $(`#sh-${id}`).value;
+    const row = sheerCurtainData.find(x => x.sheerFabricType === type || x.sheerCurtainType === type);
+    const w = toNum($(`#sw-${id}`).value);
+    const q = Math.max(1, toNum($(`#sq-${id}`).value, 2));
+    if (!row || !w) { $(`#sprice-${id}`).textContent = ''; items.get(id).sheer = 0; return; }
+    let val = row.price * w * q;
+
+const h = toNum($(`#h-${id}`)?.value);
+const over = $(`#overheight-sheer-${id}`)?.checked;
+
+if(!over){
+  delete items.get(id).sheerMode;
+}
+
+if(over && h){
+
+const fabricWidth = parseFloat($(`#fabricWidthSheer-${id}`).value);
+
+// เช็คขวางผ้า / ต่อผ้า — ใช้ชนิดม่านจริงๆ ไม่ใช่ ม่านตาไก่
+const curtainType = $(`#combo-${id}`).value.split('|')[1] || "ม่านตาไก่";
+const mode = calcFabricMode(w,curtainType,fabricWidth);
+
+items.get(id).sheerMode = mode;
+
+if(mode === "ต่อผ้า" || mode === "ขวางผ้า"){
+
+const pricePerYard = getFabricYardPrice(type);
+
+val = calcJoinFabricCost(
+w,
+h,
+fabricWidth,
+pricePerYard,
+q,
+curtainType
+);
+
+}
+
+}
+
+$(`#sprice-${id}`).textContent = fmt(val) + ' บาท';
+items.get(id).sheer = val;
+
+autoSummarize();
+  }
+
+  right.append(selGrp, widthGrp, qtyGrp, price, overBox);
+  li.append(right);
+
+  setTimeout(() => {
+  bindAuto($(`#sh-${id}`), recalc);
+  bindAuto($(`#sw-${id}`), recalc);
+  bindAuto($(`#sq-${id}`), recalc);
+  bindAuto($(`#h-${id}`),  recalc);
+    bindAuto($(`#fabricWidthSheer-${id}`), recalc);
+});
+
+  return li;
+}
+
+/*******************************
+ * ปุ่มช่วย: แยกกลาง/เดี่ยว (กว้าง) และ ปรับความสูง
+ *******************************/
+function widthFromRail(id, targetBase, mode) {
+  const railEl = document.querySelector(`#rw-${id}`);
+  const tgt = document.querySelector(`#${targetBase}-${id}`);
+  if (!railEl || !tgt) return;
+  const rw = parseFloat(railEl.value);
+  if (isNaN(rw)) return;
+  const keep3 = /\.\d{3,}/.test(railEl.value || '');
+  const val = (mode === 'half') ? (rw / 2) : rw;
+  tgt.value = keep3 ? val.toFixed(3) : val.toFixed(2);
+  tgt.dispatchEvent(new Event('input'));
+  tgt.dispatchEvent(new Event('change'));
+}
+function attachWidthButtons(id, targetBase) {
+  const inp = document.querySelector(`#${targetBase}-${id}`);
+  if (!inp) return;
+  if (inp.dataset.widthBtns === '1') return;
+  const btnHalf = document.createElement('button');
+  btnHalf.type = 'button';
+  btnHalf.className = 'action-btn half-btn';
+  btnHalf.textContent = 'แยกกลาง';
+  btnHalf.onclick = () => widthFromRail(id, targetBase, 'half');
+  const btnFull = document.createElement('button');
+  btnFull.type = 'button';
+  btnFull.className = 'action-btn full-btn';
+  btnFull.textContent = 'เดี่ยว';
+  btnFull.onclick = () => widthFromRail(id, targetBase, 'full');
+  inp.insertAdjacentElement('afterend', btnFull);
+  inp.insertAdjacentElement('afterend', btnHalf);
+  inp.dataset.widthBtns = '1';
+}
+function adjustHeightBy(id, delta) {
+  const hEl = document.querySelector(`#h-${id}`);
+  if (!hEl) return;
+  const now = parseFloat(hEl.value);
+  if (isNaN(now)) return;
+  const next = now - delta;
+  if (Math.abs(delta - 0.055) < 1e-9) {
+    hEl.value = next.toFixed(3);
+  } else {
+    const keep3 = /\.\d{3,}/.test(hEl.value || '');
+    hEl.value = keep3 ? next.toFixed(3) : next.toFixed(2);
+  }
+  hEl.dispatchEvent(new Event('input'));
+  hEl.dispatchEvent(new Event('change'));
+  summarizeAllItems();
+}
+function attachHeightButtonsPleat(id) {
+  const hEl = document.querySelector(`#h-${id}`);
+  if (!hEl) return;
+  if (hEl.dataset.hookBtns === '1') return;
+  const btnLong = document.createElement('button');
+  btnLong.type = 'button';
+  btnLong.className = 'hook-btn';
+  btnLong.textContent = 'ตะขอยาว';
+  btnLong.onclick = () => adjustHeightBy(id, 0.05);
+  const btnShort = document.createElement('button');
+  btnShort.type = 'button';
+  btnShort.className = 'hook-btn';
+  btnShort.textContent = 'ตะขอสั้น';
+  btnShort.onclick = () => adjustHeightBy(id, 0.020);
+  hEl.insertAdjacentElement('afterend', btnShort);
+  hEl.insertAdjacentElement('afterend', btnLong);
+  hEl.dataset.hookBtns = '1';
+}
+function attachHeightButtonWave(id) {
+  const hEl = document.querySelector(`#h-${id}`);
+  if (!hEl) return;
+  if (hEl.dataset.waveBtn === '1') return;
+  const btnCeil = document.createElement('button');
+  btnCeil.type = 'button';
+  btnCeil.className = 'hook-btn';
+  btnCeil.textContent = 'ติดเพดาน';
+  btnCeil.onclick = () => adjustHeightBy(id, 0.055);
+  hEl.insertAdjacentElement('afterend', btnCeil);
+  hEl.dataset.waveBtn = '1';
+}
+// ล้างปุ่มเครื่องมือก่อนสลับแบบม่าน
+function clearToolButtons(id) {
+  const card = document.getElementById(`item-${id}`);
+  if (!card) return;
+  card.querySelectorAll('.half-btn, .full-btn, .hook-btn').forEach(el => el.remove());
+  const h = document.getElementById(`h-${id}`);
+  if (h) { delete h.dataset.hookBtns; delete h.dataset.waveBtn; }
+  ['ow','sw'].forEach(base => {
+    const inp = document.getElementById(`${base}-${id}`);
+    if (inp) delete inp.dataset.widthBtns;
+  });
+}
+
+/********************************
+ * เปลี่ยนหน้าการ์ดตามชนิดที่เลือก
+ ********************************/
+function hydrateCard(id){
+  clearToolButtons(id);
+
+  const v = $(`#combo-${id}`).value || '';
+  const footerEl = document.querySelector(`#item-${id} .item-footer`);
+
+  // ซ่อนทุก section ก่อน
+  $(`#sec-curtain-${id}`).style.display = 'none';
+  $(`#sec-wood-${id}`).style.display    = 'none';
+  $(`#sec-alu-${id}`).style.display     = 'none';
+  $(`#sec-roman-${id}`).style.display   = 'none';
+  $(`#sec-roller-${id}`).style.display   = 'none';
+
+  
+
+  if (v.startsWith('CURTAIN|')) {
+    const [, ctype, ftype] = v.split('|');
+
+    // ราง
+    const rails = getRailsForType(ctype);
+    const rSel = $(`#rail-${id}`);
+    rSel.innerHTML = rails.map(r => `<option value="${r.rail}">${r.rail}</option>`).join('');
+    rSel.disabled = rails.length === 0;
+
+    // ม่านทึบ
+    const opaques = getOpaqueOptions(ctype);
+    const oSel = $(`#op-${id}`);
+    oSel.innerHTML = opaques
+      .map(o => `<option value="${o.curtainType}|${o.fabricType}">${makeComboLabel(o.curtainType, o.fabricType)}</option>`)
+      .join('');
+    oSel.value = `${ctype}|${ftype}`;
+    oSel.disabled = opaques.length === 0;
+
+    // ม่านโปร่ง
+    const sheers = getSheerOptions(ctype);
+    const sSel = $(`#sh-${id}`);
+    sSel.innerHTML = sheers.map(s => `<option value="${s.sheerFabricType}">${s.sheerFabricType}</option>`).join('');
+    sSel.disabled = sheers.length === 0;
+
+    $(`#sec-curtain-${id}`).style.display = '';
+    if (footerEl) footerEl.style.display = '';
+
+    // ปุ่มช่วยเฉพาะ “ม่านจีบ/ม่านลอนเทป/ม่านลอนตะขอ”
+    const base = baseType(ctype);
+    if (base === 'ม่านจีบ' || base === 'ม่านลอนเทป' || base === 'ม่านลอนตะขอ') {
+      attachWidthButtons(id, 'ow');
+      attachWidthButtons(id, 'sw');
+      if (base === 'ม่านจีบ' || base === 'ม่านลอนตะขอ') attachHeightButtonsPleat(id);
+      else attachHeightButtonWave(id);
+    }
+  }
+  else if (v === 'WOOD_BLIND') {
+    $(`#sec-wood-${id}`).style.display = '';
+    if (footerEl) footerEl.style.display = 'none';
+  }
+  else if (v === 'KDN_BLIND' || v === 'KACEE_BLIND') {
+    $(`#alu-model-${id}`).value = (v === 'KDN_BLIND') ? 'KDN' : 'KACEE';
+    $(`#sec-alu-${id}`).style.display = '';
+    if (footerEl) footerEl.style.display = 'none';
+  }
+  else if (v.startsWith('ROMAN|')) {
+    const fabric = v.split('|')[1];
+    $(`#roman-fabric-${id}`).value = fabric;
+    $(`#sec-roman-${id}`).style.display = '';
+    if (footerEl) footerEl.style.display = '';
+  }
+
+else if (v.startsWith('ROLLER|')) {
+  $(`#sec-roller-${id}`).style.display = '';
+  if (footerEl) footerEl.style.display = 'none';
+}
+else if (v.startsWith('MOSQ|')) {
+  $(`#sec-mosq-${id}`).style.display='';
+  if (footerEl) footerEl.style.display='none';
+}
+  autoSummarize(true);
+}
+
+/*******************************
+ * สรุปผลทุกการ์ด + คัดลอก
+ *******************************/
+function summarizeAllItems(){
+  const cardSummaries = []; // { id, lines:[], subtotal, hasRail, hasOpaque, hasSheer }
+  const blindsAgg = {
+    WOOD:  { label: 'มู่ลี่ไม้',            entries: [], total: 0 },
+    KDN:   { label: 'มู่ลี่อลูมิเนียม STE', entries: [], total: 0 },
+    KACEE: { label: 'มู่ลี่อลูมิเนียม KC',  entries: [], total: 0 },
+      ROLLER: { label: '', entries: [], total: 0 },
+  };
+  const railAgg  = {}; // label -> {label, entries:[{id,line,amt}], total}
+  const opaqueAgg = {};
+  const sheerAgg = {};
+  const romanAgg = {}; // key=fabric -> { label: `ม่านพับ (${fabric})`, entries:[], total:0 }
+
+// reset detail ทุกครั้งก่อนคำนวณ
+for (const [, st] of items) {
+
+delete st._railDetail;
+delete st._opaqueDetail;
+delete st._sheerDetail;
+
+}
+
+  // ---------- PASS 1 ----------
+  for (const [id, st] of items) {
+    const lines = [];
+    let subtotal = 0;
+    let hasRail = false, hasOpaque = false, hasSheer = false;
+
+    const hVal  = parseFloat($(`#h-${id}`)?.value);
+    const hText = isNaN(hVal) ? 'สูงตามสั่ง' : fmtSize(hVal, $(`#h-${id}`));
+
+    // 1) ราง — เก็บรายละเอียด (ยังไม่พิมพ์)
+    if (st.rail > 0) {
+      const rw = fmtSize(toNum($(`#rw-${id}`)?.value), $(`#rw-${id}`));
+      const rq = Math.max(1, toNum($(`#rq-${id}`)?.value, 1));
+      const rname = $(`#rail-${id}`)?.options[$(`#rail-${id}`).selectedIndex]?.text || 'ราง';
+      st._railDetail = {
+        label: rname,
+        line:  `${rw} = ${rq} ชุด ${fmt(st.rail)} บาท`,
+        amt: Math.round(st.rail),
+      };
+      hasRail = true;
+    }
+
+    // 2) ม่านทึบ — เก็บรายละเอียด
+    if (st.opaque > 0) {
+      const ow = fmtSize(toNum($(`#ow-${id}`)?.value), $(`#ow-${id}`));
+      const oq = Math.max(1, toNum($(`#oq-${id}`)?.value, 2));
+      let oname = $(`#op-${id}`)?.options[$(`#op-${id}`).selectedIndex]?.text || 'ม่านทึบ';
+
+const mode = items.get(id)?.fabricMode;
+
+if(mode){
+  oname += ` (${mode})`;
+}
+      st._opaqueDetail = {
+        label: oname,
+        line:  `${ow}*${hText} = ${oq} ผืน ${fmt(st.opaque)} บาท`,
+        amt: Math.round(st.opaque),
+      };
+      hasOpaque = true;
+    }
+
+    // 3) ม่านโปร่ง — เก็บรายละเอียด
+if (st.sheer > 0) {
+
+const sw = fmtSize(toNum($(`#sw-${id}`)?.value), $(`#sw-${id}`));
+const sq = Math.max(1, toNum($(`#sq-${id}`)?.value, 2));
+
+let sname = $(`#sh-${id}`)?.options[$(`#sh-${id}`).selectedIndex]?.text || 'ม่านโปร่ง';
+
+const mode = items.get(id)?.sheerMode;
+
+if(mode){
+  sname += ` (${mode})`;
+}
+
+st._sheerDetail = {
+  label: sname,
+  line: `${sw}*${hText} = ${sq} ผืน ${fmt(st.sheer)} บาท`,
+  amt: Math.round(st.sheer),
+};
+
+hasSheer = true;
+}
+
+    // 4) มู่ลี่ไม้ → กรู๊ป
+    if (st.wood > 0) {
+      const w = fmtSize(toNum($(`#wb-w-${id}`)?.value), $(`#wb-w-${id}`));
+      const h = fmtSize(toNum($(`#wb-h-${id}`)?.value), $(`#wb-h-${id}`));
+      const q = Math.max(1, toNum($(`#wb-q-${id}`)?.value, 1));
+      blindsAgg.WOOD.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.wood)} บาท`, amt: Math.round(st.wood) });
+      blindsAgg.WOOD.total += st.wood;
+    }
+    // 5) มู่ลี่อลูมิเนียม → กรู๊ป
+    if (st.kdn > 0) {
+      const w = fmtSize(toNum($(`#alu-w-${id}`)?.value), $(`#alu-w-${id}`));
+      const h = fmtSize(toNum($(`#alu-h-${id}`)?.value), $(`#alu-h-${id}`));
+      const q = Math.max(1, toNum($(`#alu-q-${id}`)?.value, 1));
+      blindsAgg.KDN.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kdn)} บาท`, amt: Math.round(st.kdn) });
+      blindsAgg.KDN.total += st.kdn;
+    }
+    if (st.kacee > 0) {
+      const w = fmtSize(toNum($(`#alu-w-${id}`)?.value), $(`#alu-w-${id}`));
+      const h = fmtSize(toNum($(`#alu-h-${id}`)?.value), $(`#alu-h-${id}`));
+      const q = Math.max(1, toNum($(`#alu-q-${id}`)?.value, 1));
+      blindsAgg.KACEE.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kacee)} บาท`, amt: Math.round(st.kacee) });
+      blindsAgg.KACEE.total += st.kacee;
+    }
+
+
+
+    // 6) ม่านพับ → กรู๊ปตาม fabric
+    if (st.roman > 0) {
+      const w = fmtSize(toNum($(`#roman-w-${id}`)?.value), $(`#roman-w-${id}`));
+      const q = Math.max(1, toNum($(`#roman-q-${id}`)?.value, 1));
+      const fabric = $(`#roman-fabric-${id}`)?.value || 'Dimout';
+      if (!romanAgg[fabric]) romanAgg[fabric] = { label: `ม่านพับ (${fabric})`, entries: [], total: 0 };
+      romanAgg[fabric].entries.push({ id, line: `${w}*${hText} = ${q} ชุด ${fmt(st.roman)} บาท`, amt: Math.round(st.roman) });
+      romanAgg[fabric].total += st.roman;
+    }
+
+  // Roller Curtain → แยกตามเปอร์เซ็นต์
+if (st.roller > 0) {
+
+  const w = fmtSize(toNum($(`#roller-w-${id}`)?.value), $(`#roller-w-${id}`));
+  const h = fmtSize(toNum($(`#roller-h-${id}`)?.value), $(`#roller-h-${id}`));
+  const q = Math.max(1, toNum($(`#roller-q-${id}`)?.value, 1));
+
+  const comboVal = $(`#combo-${id}`)?.value || '';
+  const percent = comboVal.split('|')[1] || '';
+
+  const key = `ROLLER_${percent}`;
+
+  if (!blindsAgg[key]) {
+    blindsAgg[key] = {
+      label: `ม่านม้วน ${percent}`,
+      entries: [],
+      total: 0
+    };
+  }
+  blindsAgg[key].entries.push({
+    id,
+    line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท`,
+    amt: Math.round(st.roller)
+  });
+
+  blindsAgg[key].total += st.roller;
+
+}
+
+// Mosquito Screen
+if (st.mosq > 0){
+
+  const w = fmtSize(toNum($(`#mosq-w-${id}`).value), $(`#mosq-w-${id}`));
+  const h = fmtSize(toNum($(`#mosq-h-${id}`).value), $(`#mosq-h-${id}`));
+  const q = Math.max(1,toNum($(`#mosq-q-${id}`).value,1));
+
+  const combo = $(`#combo-${id}`).value;
+  const brand = combo.split('|')[1];
+
+  let label="มุ้งจีบ";
+
+  if(brand==="LUXURY") label="มุ้งจีบ Luxury กันยุง";
+  if(brand==="SAFE") label="มุ้งจีบนิรภัย";
+  if(brand==="PNET") label="มุ้งจีบ P-net หนาพิเศษ";
+
+  const key = `MOSQ_${brand}`;
+
+  if(!blindsAgg[key]){
+    blindsAgg[key]={label,entries:[],total:0};
+  }
+
+ const type = $(`#mosq-type-${id}`)?.value || '';
+
+const typeText =
+  type === 'center' ? 'แยกกลาง' :
+  type === 'single' ? 'สไลด์เดี่ยว' : '';
+
+blindsAgg[key].entries.push({
+  id,
+  line:`${w}*${h} = ${q} ชุด ${fmt(st.mosq)} บาท (${typeText})`,
+  amt: Math.round(st.mosq)
+});
+
+  blindsAgg[key].total+=st.mosq;
+}
+
+
+
+    // โยนเข้ากลุ่ม “การ์ดเดี่ยวหมวด” (เพื่อรวมข้ามการ์ด)
+    if (st._opaqueDetail && !hasRail && !hasSheer && items.size > 1) {
+      const key = st._opaqueDetail.label;
+      if (!opaqueAgg[key]) opaqueAgg[key] = { label: key, entries: [], total: 0 };
+      opaqueAgg[key].entries.push({ id, line: st._opaqueDetail.line, amt: st._opaqueDetail.amt });
+      opaqueAgg[key].total += st._opaqueDetail.amt;
+    }
+    if (st._railDetail && !hasOpaque && !hasSheer) {
+      const key = st._railDetail.label;
+      if (!railAgg[key]) railAgg[key] = { label: key, entries: [], total: 0 };
+      railAgg[key].entries.push({ id, line: st._railDetail.line, amt: st._railDetail.amt });
+      railAgg[key].total += st._railDetail.amt;
+    }
+    if (st._sheerDetail && !hasRail && !hasOpaque && items.size > 1) {
+      const key = st._sheerDetail.label;
+      if (!sheerAgg[key]) sheerAgg[key] = { label: key, entries: [], total: 0 };
+      sheerAgg[key].entries.push({ id, line: st._sheerDetail.line, amt: st._sheerDetail.amt });
+      sheerAgg[key].total += st._sheerDetail.amt;
+    }
+
+    const hasAny =
+st._railDetail ||
+st._opaqueDetail ||
+st._sheerDetail ||
+st.wood ||
+st.kdn ||
+st.kacee ||
+st.roman ||
+st.roller ||
+st.mosq;
+
+if (!hasAny) continue;
+
+cardSummaries.push({
+  id,
+  hasRail,
+  hasOpaque,
+  hasSheer
+});
+
+}
+
+  // multi-flags
+  const multiWood  = blindsAgg.WOOD.entries.length  >= 2;
+  const multiKDN   = blindsAgg.KDN.entries.length   >= 2;
+  const multiKACEE = blindsAgg.KACEE.entries.length >= 2;
+  const rollerKeys = Object.keys(blindsAgg).filter(k => k.startsWith('ROLLER_'));
+
+const rollerMultiMap = {};
+
+for (const k of rollerKeys) {
+  rollerMultiMap[k] = blindsAgg[k].entries.length >= 2;
+}
+
+  const romanKeys = Object.keys(romanAgg);
+  const romanMultiMap = {};
+  for (const k of romanKeys) romanMultiMap[k] = romanAgg[k].entries.length >= 2;
+
+  // ---------- PASS 2 ----------
+  let output = '';
+  let otherTotal = 0;
+  let printedAnyGroup = false;
+  let cardsPrinted = 0;
+  let groupsPrinted = 0;
+
+  for (const cs of cardSummaries) {
+    const { id } = cs;
+    let cardOut = '';
+    let cardTotal = 0;
+    let blockCount = 0;
+
+    // ราง: แสดงบนการ์ดถ้า “ไม่ถูกรวม”
+    if (items.get(id)?._railDetail) {
+      const det = items.get(id)._railDetail;
+      const group = railAgg[det.label];
+      const isGrouped = group && group.entries.length >= 2 && !cs.hasOpaque && !cs.hasSheer;
+      if (!isGrouped) {
+        cardOut += `${det.label} ${det.line}\n`;
+        cardTotal += det.amt;
+        blockCount++;
+      }
+    }
+
+    // ม่านทึบ: แสดงบนการ์ดถ้า “ไม่ถูกรวม”
+    if (items.get(id)?._opaqueDetail) {
+      const det = items.get(id)._opaqueDetail;
+      const group = opaqueAgg[det.label];
+      const isGrouped = group && group.entries.length >= 2 && !cs.hasRail && !cs.hasSheer;
+      if (!isGrouped) {
+        cardOut += `${det.label}\n${det.line}\n`;
+        cardTotal += det.amt;
+        blockCount++;
+      }
+    }
+
+    // ม่านโปร่ง: แสดงบนการ์ดถ้า “ไม่ถูกรวม”
+    if (items.get(id)?._sheerDetail) {
+      const det = items.get(id)._sheerDetail;
+      const group = sheerAgg[det.label];
+      const isGrouped = group && group.entries.length >= 2 && !cs.hasRail && !cs.hasOpaque;
+      if (!isGrouped) {
+        cardOut += `${det.label}\n${det.line}\n`;
+        cardTotal += det.amt;
+        blockCount++;
+      }
+    }
+
+    // มู่ลี่: แสดงบนการ์ดถ้าไม่ใช่กรณี multi
+    const woodHere = blindsAgg.WOOD.entries.filter(e => e.id === id);
+
+if (!multiWood && woodHere.length === 1 && !cs.hasOpaque && !cs.hasSheer && !cs.hasRail) {
+  cardOut += `มู่ลี่ไม้\n${woodHere[0].line}\n`;
+  cardTotal += woodHere[0].amt;
+  blockCount++;
+}
+    const kdnHere   = blindsAgg.KDN.entries.filter(e => e.id === id);
+    if (!multiKDN && kdnHere.length === 1) {
+      cardOut += `มู่ลี่อลูมิเนียม STE\n${kdnHere[0].line}\n`;
+      cardTotal += kdnHere[0].amt;
+      blockCount++;
+    }
+    const kaceeHere = blindsAgg.KACEE.entries.filter(e => e.id === id);
+    if (!multiKACEE && kaceeHere.length === 1) {
+      cardOut += `มู่ลี่อลูมิเนียม KC\n${kaceeHere[0].line}\n`;
+      cardTotal += kaceeHere[0].amt;
+      blockCount++;
+    }
+
+    // ม่านพับ: แสดงบนการ์ดถ้าชนิดผ้านั้นไม่ใช่ multi
+    for (const k of romanKeys) {
+
+  const here = romanAgg[k].entries.filter(e => e.id === id);
+
+  if (!romanMultiMap[k] && here.length === 1 && !cs.hasOpaque && !cs.hasSheer && !cs.hasRail) {
+
+    cardOut += `${romanAgg[k].label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
   }
 }
 
-/* ── Header bar inside panel */
-.csd-header {
-  display: flex; align-items: center;
-  padding: 14px 18px 10px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  flex-shrink: 0;
-}
-.dark .csd-header { border-bottom-color: rgba(255,255,255,0.07); }
-.csd-title {
-  font-family: 'Sarabun', sans-serif;
-  font-size: 12px; font-weight: 600;
-  color: var(--ink-3); letter-spacing: 0.3px;
-  flex: 1;
-}
-.csd-close {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(142,142,147,0.14);
-  border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--ink-3); font-size: 14px; line-height: 1;
-  padding: 0; box-shadow: none;
-  transition: background var(--t-f) var(--ease-o), transform var(--t-f) var(--spring);
-}
-.csd-close:hover { background: rgba(142,142,147,0.24); transform: scale(1.1); }
-.csd-close:active { transform: scale(0.9); }
+// ม่านม้วน
+for (const k of rollerKeys) {
 
-/* ── Scrollable options list */
-.csd-list {
-  overflow-y: auto; flex: 1;
-  padding: 6px 8px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(142,142,147,0.30) transparent;
-}
-.csd-list::-webkit-scrollbar { width: 4px; }
-.csd-list::-webkit-scrollbar-track { background: transparent; }
-.csd-list::-webkit-scrollbar-thumb { background: rgba(142,142,147,0.30); border-radius: 4px; }
+  const here = blindsAgg[k].entries.filter(e => e.id === id);
 
-/* ── Group separator */
-.csd-group {
-  font-family: 'Sarabun', sans-serif;
-  font-size: 10.5px; font-weight: 600;
-  color: var(--g3); letter-spacing: 0.4px;
-  padding: 10px 10px 4px;
-  text-transform: uppercase;
-}
-.csd-group:first-child { padding-top: 4px; }
+  if (!rollerMultiMap[k] && here.length === 1) {
 
-/* ── Individual option */
-.csd-option {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 10px;
-  border-radius: var(--r-sm);
-  cursor: pointer;
-  font-family: 'Sarabun', sans-serif;
-  font-size: 14px; color: var(--ink);
-  position: relative;
-  transition:
-    background var(--t-f) var(--ease-o),
-    transform var(--t-f) var(--spring);
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-.csd-option:hover {
-  background: rgba(0,122,255,0.07);
-  transform: translateX(2px);
-}
-.dark .csd-option:hover { background: rgba(255,255,255,0.06); }
-.csd-option:active { transform: scale(0.98) translateX(1px); }
+    cardOut += `${blindsAgg[k].label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
 
-/* Selected option */
-.csd-option.csd-selected {
-  background: rgba(0,122,255,0.10);
-  color: var(--blue);
-  font-weight: 600;
-}
-.dark .csd-option.csd-selected {
-  background: rgba(10,132,255,0.16);
-  color: var(--blue);
-}
-.csd-option.csd-selected::after {
-  content: '✓';
-  margin-left: auto;
-  font-size: 14px; font-weight: 700;
-  color: var(--blue);
-  flex-shrink: 0;
+  }
 }
 
-/* Placeholder (disabled first option) */
-.csd-option.csd-placeholder {
-  color: var(--g3); font-style: italic;
+// มุ้งจีบ
+for (const k in blindsAgg) {
+
+  if (!k.startsWith('MOSQ_')) continue;
+
+  const here = blindsAgg[k].entries.filter(e => e.id === id);
+  const multi = blindsAgg[k].entries.length >= 2;
+
+  if (!multi && here.length === 1) {
+
+    cardOut += `${blindsAgg[k].label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+
 }
 
-/* ── Separator line between groups */
-.csd-sep {
-  height: 1px; margin: 4px 10px;
-  background: rgba(0,0,0,0.06);
-}
-.dark .csd-sep { background: rgba(255,255,255,0.07); }
 
-/* ══════════════════════════════════════════════════════════
-   LABELS / FORM GROUPS
-══════════════════════════════════════════════════════════ */
-.form-group { display:flex; flex-direction:column; gap:4px; }
-.form-group label, .bullet-right label {
-  display:block; margin:0 0 4px;
-  font-size:11px; font-weight:500; color:var(--ink-3); letter-spacing:0.1px;
-  transition:color var(--t-m) var(--ease-o);
-}
+    // เงื่อนไขขึ้น “รวม … บาท” เฉพาะถ้ามี >= 2 หมวดในการ์ด
+    if (cardOut.trim()) {
+      if (blockCount > 1) cardOut = cardOut.trimEnd() + `\nรวม ${fmt(cardTotal)} บาท`;
+      output += (output ? '\n\n' : '') + cardOut.trim();
+      otherTotal += cardTotal;
+      cardsPrinted++;
+    }
+  }
 
-/* ══════════════════════════════════════════════════════════
-   BULLET ROWS
-══════════════════════════════════════════════════════════ */
-.bullet-list { list-style:none; }
-.bullet-row {
-  padding:13px 0; border-top:1px solid var(--sep);
-  transition:border-color var(--t-m) var(--ease-o);
-}
-.bullet-row:first-child { border-top:none; padding-top:0; }
-.bullet-right {
-  display:grid;
-  grid-template-columns:minmax(200px,1.5fr) 104px 90px auto;
-  gap:10px; align-items:end;
-}
-.bullet-right .form-group { margin:0; }
-.bullet-actions { grid-column:4/-1; display:flex; gap:6px; align-items:center; justify-content:flex-end; }
-.bullet-actions button { padding:7px 11px; }
+  function appendGroupBlock(group) {
 
-/* ══════════════════════════════════════════════════════════
-   PRICE PILL
-══════════════════════════════════════════════════════════ */
-.price-box {
-  padding:7px 14px;
-  background:var(--blue-soft); color:var(--blue);
-  border:1px solid rgba(0,122,255,0.16);
-  border-radius:var(--r-pill);
-  font-weight:700; font-size:13px;
-  min-width:88px; text-align:center; white-space:nowrap;
-  box-shadow:0 1px 0 rgba(255,255,255,0.70) inset, 0 1px 4px rgba(0,122,255,0.10);
-  transition:background var(--t-m) var(--ease-o), color var(--t-m) var(--ease-o);
+  if (!group) return false;
+
+  // ต้องมีมากกว่า 1 รายการ ถึงจะรวม
+  if (group.entries.length < 2) return false;
+
+  const body = group.entries.map(e => e.line).join('\n');
+
+  output += (output ? '\n\n' : '') +
+    group.label + '\n' +
+    body +
+    `\nรวม ${fmt(group.total)} บาท`;
+
+  return true;
 }
 
-/* ══════════════════════════════════════════════════════════
-   TOGGLE SWITCH (checkbox)
-══════════════════════════════════════════════════════════ */
-.check { display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
-.check label {
-  display:inline-flex; align-items:center; gap:10px; cursor:pointer;
-  font-size:13px; color:var(--ink); user-select:none;
-  transition:color var(--t-m) var(--ease-o);
-}
-.check.form-group { flex-direction:row; }
-.check input[type="checkbox"] {
-  position:absolute; opacity:0; width:0; height:0; margin:0; padding:0; pointer-events:none;
-}
-.toggle-sw {
-  flex-shrink:0; position:relative; display:inline-block;
-  width:44px; height:26px; border-radius:var(--r-pill);
-  background:var(--g2); cursor:pointer;
-  border:1px solid rgba(0,0,0,0.06);
-  box-shadow:0 1px 0 rgba(255,255,255,0.90) inset, 0 1px 3px rgba(0,0,0,0.12);
-  transition:
-    background var(--t-m) var(--spring),
-    box-shadow var(--t-m) var(--ease-o),
-    border-color var(--t-m) var(--ease-o);
-}
-.dark .toggle-sw {
-  border-color:rgba(255,255,255,0.05);
-  box-shadow:0 1px 0 rgba(255,255,255,0.05) inset, 0 1px 3px rgba(0,0,0,0.35);
-}
-.toggle-sw::after {
-  content:''; position:absolute; top:2px; left:2px;
-  width:20px; height:20px; border-radius:50%;
-  background:#FFFFFF;
-  box-shadow:0 1px 0 rgba(255,255,255,0.40) inset, 0 1px 5px rgba(0,0,0,0.26), 0 0 0 0.5px rgba(0,0,0,0.06);
-  transition:left var(--t-m) var(--spring), background var(--t-m) var(--ease-o);
-}
-.check input[type="checkbox"]:checked + .toggle-sw {
-  background:var(--g4); border-color:rgba(0,0,0,0.14);
-  box-shadow:0 1px 0 rgba(255,255,255,0.16) inset, 0 2px 8px rgba(0,0,0,0.22);
-}
-.check input[type="checkbox"]:checked + .toggle-sw::after { left:22px; background:var(--g1); }
-.dark .check input[type="checkbox"]:checked + .toggle-sw {
-  background:var(--g4);
-  box-shadow:0 1px 0 rgba(255,255,255,0.08) inset, 0 2px 8px rgba(0,0,0,0.45);
-}
-.dark .check input[type="checkbox"]:checked + .toggle-sw::after {
-  left:22px; background:var(--g1);
-  box-shadow:0 1px 5px rgba(0,0,0,0.50), 0 0 0 0.5px rgba(255,255,255,0.10);
-}
-.check input[type="checkbox"]:focus-visible + .toggle-sw { outline:3px solid var(--blue-ring); outline-offset:2px; }
+  // รวม ราง / ม่านทึบ / ม่านโปร่ง (แบบข้ามการ์ด)
+  for (const k of Object.keys(railAgg))  { if (appendGroupBlock(railAgg[k]))  groupsPrinted++; }
+  for (const k of Object.keys(opaqueAgg)){ if (appendGroupBlock(opaqueAgg[k])) groupsPrinted++; }
+  for (const k of Object.keys(sheerAgg)) { if (appendGroupBlock(sheerAgg[k])) groupsPrinted++; }
 
-/* ══════════════════════════════════════════════════════════
-   NOTE
-══════════════════════════════════════════════════════════ */
-.note { font-size:11px; color:var(--g3); margin-top:3px; transition:color var(--t-m) var(--ease-o); }
+ // รวม มู่ลี่
+if (appendGroupBlock(blindsAgg.WOOD))  groupsPrinted++;
+if (appendGroupBlock(blindsAgg.KDN))   groupsPrinted++;
+if (appendGroupBlock(blindsAgg.KACEE)) groupsPrinted++;
 
-/* ══════════════════════════════════════════════════════════
-   ITEM FOOTER
-══════════════════════════════════════════════════════════ */
-.item-footer {
-  margin-top:14px; display:flex; gap:10px; align-items:center;
-  padding-top:12px; border-top:1px solid var(--sep);
-  transition:border-color var(--t-m) var(--ease-o);
+// รวม ม่านม้วน (แยกเปอร์เซ็นต์)
+for (const k in blindsAgg) {
+  if (k.startsWith('ROLLER_')) {
+    if (appendGroupBlock(blindsAgg[k])) groupsPrinted++;
+  }
 }
-.item-footer .grow { flex:1; }
-.combo-full { width:100%; max-width:720px; }
 
-/* ══════════════════════════════════════════════════════════
-   ALT BOX
-══════════════════════════════════════════════════════════ */
-.alt-box {
-  border-top:1px solid var(--sep); padding-top:14px; margin-top:10px;
-  transition:border-color var(--t-m) var(--ease-o);
+// รวม มุ้งจีบ
+for (const k in blindsAgg) {
+  if (k.startsWith('MOSQ_')) {
+    if (appendGroupBlock(blindsAgg[k])) groupsPrinted++;
+  }
 }
-.alt-row {
-  display:grid; grid-template-columns:repeat(3,minmax(120px,1fr)) auto;
-  gap:10px; align-items:end;
-}
-.alt-actions { display:flex; gap:6px; align-items:center; justify-content:flex-end; }
 
-/* ══════════════════════════════════════════════════════════
-   SUMMARY BLOCK
-══════════════════════════════════════════════════════════ */
-#summaryBlock { border-radius:var(--r-xl); overflow:hidden; padding:0; }
-#summaryBlock::before { display:none; }
-.summary-head,.cat-btn,.cat-text { display:none; }
-.summary-topbar {
-  display:flex; align-items:center; gap:10px; padding:14px 20px;
-  border-bottom:1px solid var(--sep);
-  background:rgba(255,255,255,0.22);
-  transition:background var(--t-m) var(--ease-o), border-color var(--t-m) var(--ease-o);
-}
-.dark .summary-topbar { background:rgba(255,255,255,0.035); }
-.summary-dot { width:7px; height:7px; border-radius:50%; background:var(--g3); flex-shrink:0; }
-.summary-label-text { font-size:13px; font-weight:600; color:var(--ink); flex:1; transition:color var(--t-m) var(--ease-o); }
-.summary-sub-text { font-size:12px; color:var(--g3); transition:color var(--t-m) var(--ease-o); }
-.summary-body { padding:18px 20px 20px; }
-#summaryResult {
-  width:100%; border:1px solid var(--input-border); border-radius:var(--r-lg);
-  padding:14px 16px; background:var(--input-bg); color:var(--ink);
-  font-family:'Sarabun',sans-serif; font-size:13.5px; line-height:1.90;
-  resize:vertical; min-height:170px;
-  -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
-  box-shadow:var(--input-shadow);
-  transition:
-    border-color var(--t-f) var(--ease-o),
-    box-shadow var(--t-f) var(--ease-o),
-    background var(--t-m) var(--ease-o),
-    color var(--t-m) var(--ease-o);
-}
-#summaryResult:focus {
-  outline:none; border-color:var(--blue);
-  box-shadow:0 0 0 3px var(--blue-ring), 0 1px 0 rgba(255,255,255,0.85) inset;
-  background:rgba(255,255,255,0.92);
-}
-.dark #summaryResult:focus {
-  background:rgba(52,52,58,0.96);
-  box-shadow:0 0 0 3px var(--blue-ring), 0 1px 0 rgba(255,255,255,0.05) inset;
-}
-.summary-footer { display:flex; gap:8px; margin-top:14px; }
+  // รวม ม่านพับ (ต่อ fabric ที่มีหลายการ์ด)
+  for (const k of romanKeys) { if (appendGroupBlock(romanAgg[k])) groupsPrinted++; }
 
-/* ══════════════════════════════════════════════════════════
-   SECTION DIVIDER
-══════════════════════════════════════════════════════════ */
-.section-divider { display:flex; align-items:center; gap:10px; margin:4px 0 12px; }
-.section-divider span { font-size:11px; font-weight:500; color:var(--g3); white-space:nowrap; transition:color var(--t-m) var(--ease-o); }
-.section-divider::before,.section-divider::after { content:''; flex:1; height:1px; background:var(--sep); transition:background var(--t-m) var(--ease-o); }
+  // รวมทั้งหมด: แสดงเฉพาะเมื่อมีอย่างน้อย 2 บล็อก
+  const blocks = cardsPrinted + groupsPrinted;
+  if (cardsPrinted + groupsPrinted > 1) {
+    const grand = otherTotal
+  + Object.keys(railAgg ).reduce((s,k)=> s + (railAgg[k].entries.length  >= 2 ? railAgg[k].total  : 0), 0)
+  + Object.keys(opaqueAgg).reduce((s,k)=> s + (opaqueAgg[k].entries.length>= 2 ? opaqueAgg[k].total : 0), 0)
+  + Object.keys(sheerAgg).reduce((s,k)=> s + (sheerAgg[k].entries.length >= 2 ? sheerAgg[k].total : 0), 0)
+  + (blindsAgg.WOOD.entries.length  >= 2 ? blindsAgg.WOOD.total  : 0)
+  + (blindsAgg.KDN.entries.length   >= 2 ? blindsAgg.KDN.total   : 0)
+  + (blindsAgg.KACEE.entries.length >= 2 ? blindsAgg.KACEE.total : 0)
+  + Object.keys(romanAgg).reduce((s,k)=> s + (romanAgg[k].entries.length >= 2 ? romanAgg[k].total : 0), 0)
+  + Object.keys(blindsAgg)
+    .filter(k => k.startsWith('ROLLER_'))
+    .reduce((s,k)=> s + blindsAgg[k].total, 0)
 
-/* ══════════════════════════════════════════════════════════
-   DARK MODE TOGGLE (fixed)
-══════════════════════════════════════════════════════════ */
-#modeToggle {
-  position:fixed; bottom:28px; right:24px; z-index:999;
-  width:66px; height:34px; border-radius:var(--r-pill);
-  background:var(--glass-bg);
-  -webkit-backdrop-filter:blur(32px) saturate(220%);
-  backdrop-filter:blur(32px) saturate(220%);
-  border:1px solid var(--glass-border);
-  box-shadow:0 1px 0 rgba(255,255,255,0.85) inset, 0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.07);
-  cursor:pointer; padding:0; display:flex; align-items:center; overflow:visible;
-  transition:
-    background var(--t-m) var(--ease-o),
-    border-color var(--t-m) var(--ease-o),
-    box-shadow var(--t-m) var(--ease-o);
-}
-.dark #modeToggle {
-  box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 4px 16px rgba(0,0,0,0.50), 0 1px 4px rgba(0,0,0,0.40);
-}
-#modeToggle:hover { box-shadow:0 1px 0 rgba(255,255,255,0.90) inset, 0 6px 22px rgba(0,0,0,0.18); }
-#modeToggle:active { transform:scale(0.92); }
-.toggle-track { position:relative; width:100%; height:100%; display:flex; align-items:center; }
-.toggle-knob {
-  position:absolute; left:4px; width:26px; height:26px; border-radius:50%;
-  background:#FFFFFF;
-  box-shadow:0 1px 0 rgba(255,255,255,0.60) inset, 0 1px 5px rgba(0,0,0,0.22), 0 0 0 0.5px rgba(0,0,0,0.05);
-  display:flex; align-items:center; justify-content:center;
-  font-size:13px; line-height:1;
-  transition:left var(--t-m) var(--spring), background var(--t-m) var(--ease-o), box-shadow var(--t-m) var(--ease-o);
-  z-index:2; user-select:none;
-}
-.dark .toggle-knob {
-  left:36px; background:var(--g1);
-  box-shadow:0 1px 0 rgba(255,255,255,0.08) inset, 0 1px 5px rgba(0,0,0,0.60), 0 0 0 0.5px rgba(255,255,255,0.07);
-}
-.toggle-bg-label { position:absolute; font-size:10px; color:var(--g3); transition:opacity var(--t-m) var(--ease-o); user-select:none; line-height:1; }
-.label-sun { right:7px; opacity:1; }
-.label-moon { left:7px; opacity:0; }
-.dark .label-sun { opacity:0; }
-.dark .label-moon { opacity:1; }
++ Object.keys(blindsAgg)
+    .filter(k => k.startsWith('MOSQ_'))
+    .reduce((s,k)=> s + blindsAgg[k].total, 0)
+    output += `\n\nรวมทั้งหมด ${fmt(grand)} บาท`;
+  }
 
-/* ══════════════════════════════════════════════════════════
-   SCROLLBAR
-══════════════════════════════════════════════════════════ */
-::-webkit-scrollbar { width:4px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--g2); border-radius:4px; }
-::-webkit-scrollbar-thumb:hover { background:var(--g3); }
-
-/* ══════════════════════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════════════════════ */
-@media(max-width:680px) {
-  body { padding:0 14px 120px; }
-  .app-header { padding:40px 0 28px; }
-  .bullet-right { grid-template-columns:1fr 1fr 1fr; }
-  .bullet-actions { grid-column:1/-1; justify-content:flex-start; margin-top:4px; }
-  .alt-row { grid-template-columns:1fr 1fr; }
-  .alt-actions { grid-column:1/-1; }
-  #copyBtn { width:100%; justify-content:center; }
+  $('#summaryResult').value = output || 'ยังไม่มีรายการ';
 }
+
+/*******************************
+ * Duplicate การ์ด
+ *******************************/
+function duplicateItem(srcId){
+  const comboVal    = $(`#combo-${srcId}`)?.value || '';
+  const railVal     = $(`#rail-${srcId}`)?.value || null;
+  const opaqueVal   = $(`#op-${srcId}`)?.value   || null;
+  const sheerVal    = $(`#sh-${srcId}`)?.value   || null;
+  const aluModel    = $(`#alu-model-${srcId}`)?.value || null;
+  const romanFabric = $(`#roman-fabric-${srcId}`)?.value || null;
+
+  const newId = addItem();
+  $(`#combo-${newId}`).value = comboVal;
+  hydrateCard(newId);
+
+  setTimeout(() => {
+    if (railVal && $(`#rail-${newId}`)) {
+      $(`#rail-${newId}`).value = railVal;
+      $(`#rail-${newId}`).dispatchEvent(new Event('change'));
+    }
+    if (opaqueVal && $(`#op-${newId}`)) {
+      $(`#op-${newId}`).value = opaqueVal;
+      $(`#op-${newId}`).dispatchEvent(new Event('change'));
+    }
+    if (sheerVal && $(`#sh-${newId}`)) {
+      $(`#sh-${newId}`).value = sheerVal;
+      $(`#sh-${newId}`).dispatchEvent(new Event('change'));
+    }
+    if (aluModel && $(`#alu-model-${newId}`)) {
+      $(`#alu-model-${newId}`).value = aluModel;
+      $(`#alu-model-${newId}`).dispatchEvent(new Event('change'));
+    }
+    if (romanFabric && $(`#roman-fabric-${newId}`)) {
+      $(`#roman-fabric-${newId}`).value = romanFabric;
+      $(`#roman-fabric-${newId}`).dispatchEvent(new Event('change'));
+    }
+
+    // ล้างค่ากว้าง/สูง/จำนวนของการ์ดใหม่ให้ว่างหรือค่าเริ่มต้น
+    const ids = [
+      `rw-${newId}`, `rq-${newId}`,
+      `ow-${newId}`, `oq-${newId}`,
+      `sw-${newId}`, `sq-${newId}`,
+      `wb-w-${newId}`, `wb-h-${newId}`, `wb-q-${newId}`,
+      `alu-w-${newId}`, `alu-h-${newId}`, `alu-q-${newId}`,
+      `roman-w-${newId}`, `roman-q-${newId}`,
+      `h-${newId}`
+    ];
+    ids.forEach(cid => {
+      const elx = $(`#${cid}`);
+      if (!elx) return;
+      if (/-(q|rq|oq|sq)$/.test(cid)) {
+        elx.value = cid.endsWith('rq') ? 1 :
+                    (cid.endsWith('oq') || cid.endsWith('sq') ? 2 : 1);
+      } else {
+        elx.value = '';
+      }
+      elx.dispatchEvent(new Event('input'));
+      elx.dispatchEvent(new Event('change'));
+    });
+  }, 0);
+}
+
+/*******************************
+ * COPY SUMMARY
+ *******************************/
+async function copySummary() {
+  const ta = document.getElementById('summaryResult');
+  if (!ta) { alert('ไม่พบกล่องสรุปรายการ'); return; }
+
+  const text = (ta.value || '').trim();
+  if (!text) { alert('ยังไม่มีรายการให้คัดลอก'); return; }
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_) {
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.style.position = 'fixed';
+    tmp.style.top = '-1000px';
+    document.body.appendChild(tmp);
+    tmp.focus();
+    tmp.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(tmp);
+  }
+
+  const btn = document.getElementById('copyBtn');
+  if (btn) {
+    const prev = btn.textContent;
+    btn.textContent = 'คัดลอกแล้ว ✓';
+    setTimeout(() => (btn.textContent = prev), 1200);
+  }
+}
+
+/*******************************
+ * เริ่มทำงาน
+ *******************************/
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await loadPrice();
+    const btn = document.getElementById('addItemBtn');
+    if (btn) btn.addEventListener('click', addItem);
+    const copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) copyBtn.addEventListener('click', copySummary);
+    autoSummarize(true);
+  } catch (e) {
+    console.error(e);
+    alert('โหลดข้อมูลไม่สำเร็จ');
+  }
+});
