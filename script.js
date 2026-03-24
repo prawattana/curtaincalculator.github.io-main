@@ -1069,7 +1069,7 @@ function attachHeightButtonsPleat(id) {
   btnLong.type = 'button';
   btnLong.className = 'hook-btn';
   btnLong.textContent = 'ตะขอยาว';
-  btnLong.onclick = () => adjustHeightBy(id, 0.055);
+  btnLong.onclick = () => adjustHeightBy(id, 0.05);
   const btnShort = document.createElement('button');
   btnShort.type = 'button';
   btnShort.className = 'hook-btn';
