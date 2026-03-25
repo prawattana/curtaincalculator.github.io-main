@@ -1129,61 +1129,56 @@ function attachWidthButtons(id, targetBase) {
   if (!inp) return;
   if (inp.dataset.widthBtns === '1') return;
 
+  // ตรวจชนิดม่าน เพื่อตัดสินใจว่าจะแสดงปุ่มห่วงโชว์ราง
+  const combo = document.querySelector(`#combo-${id}`)?.value || '';
+  const curtainBase = baseType(combo.split('|')[1] || '');
+  const showRingBtn = curtainBase === 'ม่านจีบ' || curtainBase === 'ม่านลอนตะขอ';
+
   // ✅ container แนวตั้ง
   const wrap = document.createElement('div');
-  wrap.style.display = 'flex';
-  wrap.style.flexDirection = 'column';
-  wrap.style.gap = '6px';
-  wrap.style.marginTop = '6px';
-
-  // แถวปุ่ม แยกกลาง / เดี่ยว
-  const row = document.createElement('div');
-  row.style.display = 'flex';
-  row.style.gap = '6px';
+  wrap.className = 'width-btn-group';
 
   const btnHalf = document.createElement('button');
   btnHalf.type = 'button';
-  btnHalf.className = 'action-btn half-btn';
+  btnHalf.className = 'action-btn half-btn width-mode-btn';
   btnHalf.textContent = 'แยกกลาง';
   btnHalf.onclick = () => widthFromRail(id, targetBase, 'half');
 
   const btnFull = document.createElement('button');
   btnFull.type = 'button';
-  btnFull.className = 'action-btn full-btn';
+  btnFull.className = 'action-btn full-btn width-mode-btn';
   btnFull.textContent = 'เดี่ยว';
   btnFull.onclick = () => widthFromRail(id, targetBase, 'full');
 
-  row.append(btnHalf, btnFull);
-  wrap.append(row);
+  wrap.append(btnHalf, btnFull);
 
-  // ✅ ปุ่มห่วงโชว์ราง (ทั้ง ow และ sw)
-  const btnRing = document.createElement('button');
-  btnRing.type = 'button';
-  btnRing.className = 'hook-btn';
-  btnRing.textContent = 'ห่วงโชว์ราง';
+  // ✅ ปุ่มห่วงโชว์ราง — เฉพาะม่านจีบ และ ม่านลอนตะขอ
+  if (showRingBtn) {
+    const btnRing = document.createElement('button');
+    btnRing.type = 'button';
+    btnRing.className = 'hook-btn width-mode-btn';
+    btnRing.textContent = 'ห่วงโชว์ราง';
 
-  btnRing.onclick = () => {
-  const st = items.get(id);
+    btnRing.onclick = () => {
+      const st = items.get(id);
+      if (targetBase === 'ow') {
+        st.hookRingOpaque = !st.hookRingOpaque;
+        btnRing.classList.toggle('active', st.hookRingOpaque);
+      }
+      if (targetBase === 'sw') {
+        st.hookRingSheer = !st.hookRingSheer;
+        btnRing.classList.toggle('active', st.hookRingSheer);
+      }
+      recalcHookRing(id);
+    };
 
-  if (targetBase === 'ow') {
-    st.hookRingOpaque = !st.hookRingOpaque;
-    btnRing.classList.toggle('active', st.hookRingOpaque);
+    wrap.append(btnRing);
   }
-
-  if (targetBase === 'sw') {
-    st.hookRingSheer = !st.hookRingSheer;
-    btnRing.classList.toggle('active', st.hookRingSheer);
-  }
-
-  recalcHookRing(id);
-};
-
-  wrap.append(btnRing);
 
   inp.insertAdjacentElement('afterend', wrap);
-
   inp.dataset.widthBtns = '1';
 }
+
 function adjustHeightBy(id, delta) {
   const hEl = document.querySelector(`#h-${id}`);
   if (!hEl) return;
@@ -1312,6 +1307,9 @@ function attachHeightButtonWave(id) {
 function clearToolButtons(id) {
   const card = document.getElementById(`item-${id}`);
   if (!card) return;
+  // ลบ container group ก่อน (ครอบ half/full/hook ไว้ข้างใน)
+  card.querySelectorAll('.width-btn-group').forEach(el => el.remove());
+  // ลบปุ่มที่ยังหลงเหลืออยู่นอก group (กรณี legacy)
   card.querySelectorAll('.half-btn, .full-btn, .hook-btn').forEach(el => el.remove());
   const h = document.getElementById(`h-${id}`);
   if (h) { delete h.dataset.hookBtns; delete h.dataset.waveBtn; }
@@ -1360,7 +1358,15 @@ function hydrateCard(id){
     // ม่านโปร่ง
     const sheers = getSheerOptions(ctype);
     const sSel = $(`#sh-${id}`);
-    sSel.innerHTML = sheers.map(s => `<option value="${s.sheerFabricType}">${s.sheerFabricType}</option>`).join('');
+    sSel.innerHTML = sheers.map(s => {
+      let label = s.sheerFabricType;
+      if (label.includes('หนาพิเศษ')) {
+        label = label.replace('หนาพิเศษ', 'อื่นๆ') + ' (Linen Pie,โปร่งไม่มีในสต็อก)';
+      } else if (label.includes('สูงพิเศษ')) {
+        label = label + ' (สูงพิเศษ,Richy,Mid-modern)';
+      }
+      return `<option value="${s.sheerFabricType}">${label}</option>`;
+    }).join('');
     sSel.disabled = sheers.length === 0;
 
     $(`#sec-curtain-${id}`).style.display = '';
@@ -1380,8 +1386,8 @@ function hydrateCard(id){
 ) {
       attachWidthButtons(id, 'ow');
       attachWidthButtons(id, 'sw');
-      if (base === 'ม่านจีบ' || base === 'ม่านลอนตะขอ') attachHeightButtonsPleat(id);
-      else attachHeightButtonWave(id);
+      if (base === 'ม่านจีบ' || base === 'ม่านลอนตะขอ' || base === 'ม่านลอนโซ่') attachHeightButtonsPleat(id);
+      else if (base === 'ม่านลอนเทป') attachHeightButtonWave(id);
     }
   }
   else if (v === 'WOOD_BLIND') {
@@ -1483,7 +1489,9 @@ if (st.sheer > 0) {
 const sw = fmtSize(toNum($(`#sw-${id}`)?.value), $(`#sw-${id}`));
 const sq = Math.max(1, toNum($(`#sq-${id}`)?.value, 2));
 
-let sname = $(`#sh-${id}`)?.options[$(`#sh-${id}`).selectedIndex]?.text || 'ม่านโปร่ง';
+let sname = ($(`#sh-${id}`)?.options[$(`#sh-${id}`).selectedIndex]?.text || 'ม่านโปร่ง')
+  .replace(/\s*\([^)]*\)$/, '')
+  .replace('หนาพิเศษ', 'อื่นๆ');
 
 const mode = items.get(id)?.sheerMode;
 
