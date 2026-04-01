@@ -8,6 +8,9 @@ let rollerCurtainData = [];
 let blindKDN = null;     // blindsData.json
 let blindKACEE = null;   // ฺblindsDataKacee.json
 
+let KACEE_MODELS_DATA = {};
+let KACEE_MODEL_LIST = [];
+
 async function loadPrice() {
   // ราง / ม่านทึบ / ม่านโปร่ง
   const res = await fetch('priceData.json');
@@ -28,6 +31,16 @@ async function loadPrice() {
   try {
     const r2 = await fetch('ฺblindsDataKacee.json');
     if (r2.ok) blindKACEE = await r2.json();
+  } catch {}
+
+  // มู่ลี่ KACEE — ตารางราคาแยกตามรุ่น
+  try {
+    const r3 = await fetch('kaceeModels.json');
+    if (r3.ok) {
+      const kj = await r3.json();
+      KACEE_MODELS_DATA = kj.blinds || {};
+      KACEE_MODEL_LIST  = Object.keys(KACEE_MODELS_DATA);
+    }
   } catch {}
 }
 
@@ -428,12 +441,19 @@ function addItem(){
 
   // ===== SECTION: ALUMINUM BLIND (KDN / KACEE) =====
   const secAlu = el('div', { className:'alt-box', id:`sec-alu-${id}`, style:'display:none' });
+  const _kaceeOpts = KACEE_MODEL_LIST.map(m => `<option value="${m}">${m}</option>`).join('');
   secAlu.innerHTML = `
-    <div class="form-group">
-      <label>รุ่นมู่ลี่:</label>
+    <div class="form-group" id="alu-brand-grp-${id}">
+      <label>ยี่ห้อมู่ลี่:</label>
       <select id="alu-model-${id}">
         <option value="KDN">มู่ลี่ KDN (STE)</option>
         <option value="KACEE">มู่ลี่ KACEE (KC)</option>
+      </select>
+    </div>
+    <div class="form-group" id="kacee-sub-grp-${id}" style="display:none">
+      <label>รุ่น:</label>
+      <select id="kacee-sub-${id}">
+        ${_kaceeOpts}
       </select>
     </div>
     <div class="alt-row">
@@ -443,33 +463,49 @@ function addItem(){
       <div class="price-box" id="alu-price-${id}"></div>
     </div>
     <div class="note">* ขนาดต้องตรงกับช่วงในตารางราคา</div>
-  `;
+  `.replace('${_kaceeOpts}', _kaceeOpts);
  function recalcAlu(){
   const model = $(`#alu-model-${id}`).value; // KDN | KACEE
   const wStr = $(`#alu-w-${id}`).value;
   const hStr = $(`#alu-h-${id}`).value;
   const q = Math.max(1, toNum($(`#alu-q-${id}`).value, 1));
 
+  // แสดง/ซ่อน dropdown รุ่น KACEE
+  const subGrp = $(`#kacee-sub-grp-${id}`);
+  if (subGrp) subGrp.style.display = (model === 'KACEE') ? '' : 'none';
+
   const wDisplay = toNum(wStr);
   const hDisplay = toNum(hStr);
   if (!wDisplay || !hDisplay) {
     $(`#alu-price-${id}`).textContent='';
-    const st=items.get(id); st.kdn=0; st.kacee=0; 
+    const st=items.get(id); st.kdn=0; st.kacee=0;
     return;
   }
 
-  // ใช้ rule ปัดเฉพาะตอน "เทียบราคาในตาราง"
   const wLookup = lookupTenthByHundredths(wStr);
   const hLookup = lookupTenthByHundredths(hStr);
 
-  const data = (model==='KDN') ? blindKDN : blindKACEE;
-  const key  = (model==='KDN') ? 'KDN_25mm' : 'KACEE_25_35_50mm';
-  const price = matrixPrice(data, key, wLookup, hLookup);
-
+  let price = null;
+  if (model === 'KDN') {
+    price = matrixPrice(blindKDN, 'KDN_25mm', wLookup, hLookup);
+  } else {
+    // KACEE — ใช้ข้อมูลฝังตัวตามรุ่นที่เลือก
+    const subModel = $(`#kacee-sub-${id}`)?.value || KACEE_MODEL_LIST[0];
+    const modelData = KACEE_MODELS_DATA[subModel];
+    if (modelData) {
+      const wrapper = { blinds: { _k: modelData } };
+      price = matrixPrice(wrapper, '_k', wLookup, hLookup);
+      // ราคาขั้นต่ำ = ราคาขนาด 1.00*1.00 ของรุ่นนั้น
+      const minPrice = matrixPrice(wrapper, '_k', 1.0, 1.0);
+      if (price != null && minPrice != null && price < minPrice) {
+        price = minPrice;
+      }
+    }
+  }
 
   if (price == null) {
     $(`#alu-price-${id}`).textContent='';
-    const st=items.get(id); st.kdn=0; st.kacee=0; 
+    const st=items.get(id); st.kdn=0; st.kacee=0;
     return;
   }
 
@@ -481,10 +517,11 @@ function addItem(){
 }
 
   setTimeout(() => {
-    bindAuto($(`#alu-model-${id}`), recalcAlu);
-    bindAuto($(`#alu-w-${id}`),     recalcAlu);
-    bindAuto($(`#alu-h-${id}`),     recalcAlu);
-    bindAuto($(`#alu-q-${id}`),     recalcAlu);
+    bindAuto($(`#alu-model-${id}`),  recalcAlu);
+    bindAuto($(`#kacee-sub-${id}`),  recalcAlu);
+    bindAuto($(`#alu-w-${id}`),      recalcAlu);
+    bindAuto($(`#alu-h-${id}`),      recalcAlu);
+    bindAuto($(`#alu-q-${id}`),      recalcAlu);
   });
 
   // ===== SECTION: ROMAN (ม่านพับ) =====
@@ -1252,20 +1289,20 @@ function attachHeightButtonsPleat(id) {
 
   // === แถวที่ 1 ===
   wrap.append(
-    makeBtn('ตะขอยาว', 0.05),
+    makeBtn('ตะขอยาว', 0.055),
     makeBtn('ตะขอยาว(ใช้ลิ้นราง)', 0.045)
   );
 
   // === แถวที่ 2 ===
   wrap.append(
-    makeBtn('ตะขอสั้น', 0.02),
-    makeBtn('ตะขอสั้น(ใช้ลิ้นราง)', 0.015)
+    makeBtn('ตะขอสั้น', 0.015),
+    makeBtn('ตะขอสั้น(ใช้ลิ้นราง)', 0.01)
   );
 
   // === แถวที่ 3 ===
   wrap.append(
-    makeBtn('ตะขอเพดาน', 0.03),
-    makeBtn('ตะขอเพดาน(ใช้ลิ้นราง)', 0.02)
+    makeBtn('ตะขอเพดาน', 0.02),
+    makeBtn('ตะขอเพดาน(ใช้ลิ้นราง)', 0.015)
   );
 
   // ใส่หลัง input ความสูง
@@ -1395,9 +1432,21 @@ function hydrateCard(id){
     if (footerEl) footerEl.style.display = 'none';
   }
   else if (v === 'KDN_BLIND' || v === 'KACEE_BLIND') {
-    $(`#alu-model-${id}`).value = (v === 'KDN_BLIND') ? 'KDN' : 'KACEE';
+    const isKACEE = (v === 'KACEE_BLIND');
+    $(`#alu-model-${id}`).value = isKACEE ? 'KACEE' : 'KDN';
+    // ซ่อน dropdown ยี่ห้อ (ไม่จำเป็นเพราะ combo หลักบอกยี่ห้อแล้ว)
+    const brandGrp = $(`#alu-brand-grp-${id}`);
+    if (brandGrp) brandGrp.style.display = 'none';
+    // แสดง dropdown รุ่นทันทีสำหรับ KACEE
+    const subGrp = $(`#kacee-sub-grp-${id}`);
+    if (subGrp) subGrp.style.display = isKACEE ? '' : 'none';
     $(`#sec-alu-${id}`).style.display = '';
     if (footerEl) footerEl.style.display = 'none';
+    // trigger คำนวณราคาทันที
+    setTimeout(() => {
+      const aluModel = $(`#alu-model-${id}`);
+      if (aluModel) aluModel.dispatchEvent(new Event('change'));
+    }, 0);
   }
   else if (v.startsWith('ROMAN|')) {
     const fabric = v.split('|')[1];
