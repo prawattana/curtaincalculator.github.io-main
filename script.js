@@ -1909,11 +1909,11 @@ for (const k in blindsAgg) {
   + Object.keys(romanAgg).reduce((s,k)=> s + (romanAgg[k].entries.length >= 2 ? romanAgg[k].total : 0), 0)
   + Object.keys(blindsAgg)
     .filter(k => k.startsWith('ROLLER_'))
-    .reduce((s,k)=> s + blindsAgg[k].total, 0)
+    .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
 
 + Object.keys(blindsAgg)
     .filter(k => k.startsWith('MOSQ_'))
-    .reduce((s,k)=> s + blindsAgg[k].total, 0)
+    .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
     output += `\n\nรวมทั้งหมด ${fmt(grand)} บาท`;
   }
 
