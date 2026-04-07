@@ -369,8 +369,20 @@ function matrixPrice(blindJson, modelKey, width, height) {
   const H = blk.heights || [];
   const P = blk.prices || []; // P[hi][wi]
   const round2 = (x) => Math.round(x * 100) / 100;
-  const wi = W.findIndex(v => round2(v) === round2(width));
-  const hi = H.findIndex(v => round2(v) === round2(height));
+
+  // exact match ก่อน — ถ้าไม่เจอ ให้ใช้ค่าถัดขึ้นไปในตาราง (ceiling)
+  let wi = W.findIndex(v => round2(v) === round2(width));
+  if (wi < 0) {
+    const rw = round2(width);
+    wi = W.findIndex(v => round2(v) > rw);
+  }
+
+  let hi = H.findIndex(v => round2(v) === round2(height));
+  if (hi < 0) {
+    const rh = round2(height);
+    hi = H.findIndex(v => round2(v) > rh);
+  }
+
   if (wi < 0 || hi < 0) return null;
   if (!P[hi] || typeof P[hi][wi] !== 'number') return null;
   return P[hi][wi];
