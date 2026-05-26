@@ -434,8 +434,8 @@ function addItem(){
     const h = toNum($(`#wb-h-${id}`).value);
     const q = Math.max(1, toNum($(`#wb-q-${id}`).value, 1));
     if (!w || !h) { $(`#wb-price-${id}`).textContent=''; items.get(id).wood=0; return; }
-    let unit = w*h*1.2*1290;
-    if (unit < 1548) unit = 1548;
+    let unit = w*h*1.2*1390;
+    if (unit < 2085) unit = 2085;
     const total = unit*q;
     $(`#wb-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).wood = total;
