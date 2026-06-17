@@ -308,6 +308,7 @@ function getCurtainCombos() {
 { label: 'มุ้งจีบ Luxury กันยุง (ราคาลูกค้าออนไลน์)', value: 'MOSQ|LUXURY' },
 { label: 'มุ้งจีบนิรภัย (ราคาลูกค้าออนไลน์)', value: 'MOSQ|SAFE' },
 { label: 'มุ้งจีบ P-net หนาพิเศษ (ราคาลูกค้างานติดตั้ง)', value: 'MOSQ|PNET' },
+{ label: 'มุ้งรังผึ้ง', value: 'HONEYCOMB' },
   ];
   return [...uniq.values(), ...extra];
 }
@@ -434,8 +435,8 @@ function addItem(){
     const h = toNum($(`#wb-h-${id}`).value);
     const q = Math.max(1, toNum($(`#wb-q-${id}`).value, 1));
     if (!w || !h) { $(`#wb-price-${id}`).textContent=''; items.get(id).wood=0; return; }
-    let unit = w*h*1.2*1390;
-    if (unit < 2085) unit = 2085;
+    let unit = w*h*1.2*1290;
+    if (unit < 1548) unit = 1548;
     const total = unit*q;
     $(`#wb-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).wood = total;
@@ -740,6 +741,77 @@ bindAuto($(`#mosq-q-${id}`),recalcMosq);
 bindAuto($(`#mosq-type-${id}`),recalcMosq);
 });
 
+// ===== SECTION: HONEYCOMB (มุ้งรังผึ้ง) =====
+const secHoney = el('div', { className:'alt-box', id:`sec-honey-${id}`, style:'display:none' });
+
+secHoney.innerHTML = `
+<div class="form-group">
+<label>รูปแบบ:</label>
+<select id="honey-type-${id}">
+<option value="single">สไลด์เดี่ยว</option>
+<option value="center">แยกกลาง</option>
+</select>
+</div>
+
+<div class="alt-row">
+<div class="form-group">
+<label>กว้าง (เมตร):</label>
+<input type="number" id="honey-w-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>สูง (เมตร):</label>
+<input type="number" id="honey-h-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>จำนวนชุด:</label>
+<input type="number" id="honey-q-${id}" value="1">
+</div>
+
+<div class="price-box" id="honey-price-${id}"></div>
+</div>
+
+<div class="note">* 1,800 บาท/ตร.ม. ขั้นต่ำ 1 ตร.ม. (แยกกลางขั้นต่ำ 2 ตร.ม.)</div>
+`;
+
+function recalcHoney(){
+
+const type = $(`#honey-type-${id}`).value;
+
+const w = toNum($(`#honey-w-${id}`).value);
+const h = toNum($(`#honey-h-${id}`).value);
+const q = Math.max(1,toNum($(`#honey-q-${id}`).value,1));
+
+if(!w || !h){
+  $(`#honey-price-${id}`).textContent='';
+  items.get(id).honey=0;
+  autoSummarize();
+  return;
+}
+
+// 1,800 บาท/ตร.ม. — ขั้นต่ำ 1 ตร.ม. / แยกกลางขั้นต่ำ 2 ตร.ม.
+const minArea = (type==="center") ? 2 : 1;
+
+let area = w*h;
+if(area < minArea) area = minArea;
+
+const total = area*1800*q;
+
+$(`#honey-price-${id}`).textContent = fmt(total)+' บาท';
+
+items.get(id).honey = total;
+
+autoSummarize();
+}
+
+setTimeout(()=>{
+bindAuto($(`#honey-w-${id}`),recalcHoney);
+bindAuto($(`#honey-h-${id}`),recalcHoney);
+bindAuto($(`#honey-q-${id}`),recalcHoney);
+bindAuto($(`#honey-type-${id}`),recalcHoney);
+});
+
   // ===== FOOTER: ความสูงรวม (เพื่อสรุป) =====
   const foot = el('div', { className:'item-footer' });
   const hGroup = el('div', { className:'form-group grow' });
@@ -747,7 +819,7 @@ bindAuto($(`#mosq-type-${id}`),recalcMosq);
   foot.append(hGroup);
 
   // ประกอบการ์ด
-card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, foot);
+card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, secHoney, foot);
   $('#itemsContainer').append(card);
 
   setTimeout(() => {
@@ -769,6 +841,7 @@ card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, foo
   roman:0,
   roller:0,
   mosq:0,
+  honey:0,
   hookRing: 0,
   hookRingOpaque: false,
 hookRingSheer: false,
@@ -1383,8 +1456,9 @@ function hydrateCard(id){
   $(`#sec-alu-${id}`).style.display     = 'none';
   $(`#sec-roman-${id}`).style.display   = 'none';
   $(`#sec-roller-${id}`).style.display   = 'none';
+  $(`#sec-honey-${id}`).style.display    = 'none';
 
-  
+
 
   if (v.startsWith('CURTAIN|')) {
     const [, ctype, ftype] = v.split('|');
@@ -1473,6 +1547,10 @@ else if (v.startsWith('ROLLER|')) {
 }
 else if (v.startsWith('MOSQ|')) {
   $(`#sec-mosq-${id}`).style.display='';
+  if (footerEl) footerEl.style.display='none';
+}
+else if (v === 'HONEYCOMB') {
+  $(`#sec-honey-${id}`).style.display='';
   if (footerEl) footerEl.style.display='none';
 }
   autoSummarize(true);
@@ -1671,6 +1749,31 @@ blindsAgg[key].entries.push({
   blindsAgg[key].total+=st.mosq;
 }
 
+// Honeycomb Screen (มุ้งรังผึ้ง)
+if (st.honey > 0){
+
+  const w = fmtSize(toNum($(`#honey-w-${id}`).value), $(`#honey-w-${id}`));
+  const h = fmtSize(toNum($(`#honey-h-${id}`).value), $(`#honey-h-${id}`));
+  const q = Math.max(1,toNum($(`#honey-q-${id}`).value,1));
+
+  const type = $(`#honey-type-${id}`)?.value || '';
+  const typeText =
+    type === 'center' ? 'แยกกลาง' :
+    type === 'single' ? 'สไลด์เดี่ยว' : '';
+
+  if(!blindsAgg.HONEY){
+    blindsAgg.HONEY={label:'มุ้งรังผึ้ง',entries:[],total:0};
+  }
+
+  blindsAgg.HONEY.entries.push({
+    id,
+    line:`${w}*${h} = ${q} ชุด ${fmt(st.honey)} บาท (${typeText})`,
+    amt: Math.round(st.honey)
+  });
+
+  blindsAgg.HONEY.total+=st.honey;
+}
+
 
 
     // โยนเข้ากลุ่ม “การ์ดเดี่ยวหมวด” (เพื่อรวมข้ามการ์ด)
@@ -1702,7 +1805,8 @@ st.kdn ||
 st.kacee ||
 st.roman ||
 st.roller ||
-st.mosq;
+st.mosq ||
+st.honey;
 
 if (!hasAny) continue;
 
@@ -1854,6 +1958,22 @@ for (const k in blindsAgg) {
 
 }
 
+// มุ้งรังผึ้ง
+if (blindsAgg.HONEY) {
+
+  const here = blindsAgg.HONEY.entries.filter(e => e.id === id);
+  const multi = blindsAgg.HONEY.entries.length >= 2;
+
+  if (!multi && here.length === 1) {
+
+    cardOut += `${blindsAgg.HONEY.label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+
+}
+
 
     // เงื่อนไขขึ้น “รวม … บาท” เฉพาะถ้ามี >= 2 หมวดในการ์ด
     if (cardOut.trim()) {
@@ -1905,6 +2025,9 @@ for (const k in blindsAgg) {
   }
 }
 
+// รวม มุ้งรังผึ้ง
+if (blindsAgg.HONEY && appendGroupBlock(blindsAgg.HONEY)) groupsPrinted++;
+
   // รวม ม่านพับ (ต่อ fabric ที่มีหลายการ์ด)
   for (const k of romanKeys) { if (appendGroupBlock(romanAgg[k])) groupsPrinted++; }
 
@@ -1926,6 +2049,7 @@ for (const k in blindsAgg) {
 + Object.keys(blindsAgg)
     .filter(k => k.startsWith('MOSQ_'))
     .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
+  + (blindsAgg.HONEY && blindsAgg.HONEY.entries.length >= 2 ? blindsAgg.HONEY.total : 0)
     output += `\n\nรวมทั้งหมด ${fmt(grand)} บาท`;
   }
 

@@ -469,6 +469,8 @@ select.csd-open {
 /* ── Scrollable options list */
 .csd-list {
   overflow-y: auto; flex: 1;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 6px 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(142,142,147,0.30) transparent;
