@@ -17,35 +17,6 @@
   let listEl   = null;
   let activeSelect = null;
 
-  /* ── Page scroll lock (กันหน้าจอเลื่อนตามตอนเปิด dropdown) ── */
-  let savedScrollY = 0;
-  let scrollLocked = false;
-
-  function lockScroll() {
-    if (scrollLocked) return;
-    savedScrollY = window.scrollY || window.pageYOffset || 0;
-    const sbw = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.position = 'fixed';
-    document.body.style.top   = `-${savedScrollY}px`;
-    document.body.style.left  = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
-    if (sbw > 0) document.body.style.paddingRight = sbw + 'px';
-    scrollLocked = true;
-  }
-
-  function unlockScroll() {
-    if (!scrollLocked) return;
-    document.body.style.position     = '';
-    document.body.style.top          = '';
-    document.body.style.left         = '';
-    document.body.style.right        = '';
-    document.body.style.width        = '';
-    document.body.style.paddingRight = '';
-    scrollLocked = false;
-    window.scrollTo(0, savedScrollY);
-  }
-
   /* ── Build overlay once ── */
   function buildOverlay() {
     if (backdrop) return;
@@ -206,7 +177,6 @@
     panel.style.display = 'flex';
 
     positionPanel(sel);  // now scrollHeight is accurate
-    lockScroll();        // ล็อกหน้าจอ กันเลื่อนแล้ว dropdown หลุด
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -235,8 +205,6 @@
       activeSelect.classList.remove('csd-open');
       activeSelect = null;
     }
-
-    unlockScroll();  // ปลดล็อกหน้าจอ (เรียกหลังเคลียร์ activeSelect แล้ว)
 
     document.removeEventListener('keydown', onKeydown);
 
