@@ -284,9 +284,10 @@
       }
     }, true);
 
-    // Re-position on resize; close on scroll (absolute panel moves with page)
+    // Re-position on resize AND scroll so the panel stays anchored to its
+    // trigger (instead of closing — that made bottom options unreachable)
     window.addEventListener('resize', () => { if (activeSelect) positionPanel(activeSelect); });
-    window.addEventListener('scroll', () => { if (activeSelect) closeDropdown(); }, { passive: true });
+    window.addEventListener('scroll', () => { if (activeSelect) positionPanel(activeSelect); }, { passive: true });
   }
 
   /* ── Wait for DOM ── */
