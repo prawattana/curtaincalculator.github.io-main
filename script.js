@@ -435,8 +435,9 @@ function addItem(){
     const h = toNum($(`#wb-h-${id}`).value);
     const q = Math.max(1, toNum($(`#wb-q-${id}`).value, 1));
     if (!w || !h) { $(`#wb-price-${id}`).textContent=''; items.get(id).wood=0; return; }
-    let unit = w*h*1.2*1290;
-    if (unit < 1548) unit = 1548;
+    let sqyd = w*h*1.2;           // กว้าง×สูง×1.2 = ตารางหลา
+    if (sqyd < 1.50) sqyd = 1.50; // ไม่ถึง 1.50 ตรล. คิดที่ 1.50
+    let unit = sqyd*1390;          // ราคาขาย 1390
     const total = unit*q;
     $(`#wb-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).wood = total;
