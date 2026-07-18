@@ -10,6 +10,32 @@
 </head>
 <body>
 
+<!-- ปุ่มกลับหน้ารวมเครื่องมือของแอป "Donna Design" (ระบบร้านเสิร์ฟหน้านี้ที่ /calc ผ่าน rewrite)
+     โผล่เฉพาะตอนเปิดจากแอปที่ติดตั้งบนมือถือ — เปิดหน้านี้บน GitHub Pages ในเบราว์เซอร์ปกติจะไม่ขึ้น
+     (ที่นั่นไม่มี /hub จะกดแล้ว 404)
+     ‼️ ถ้าไม่มีปุ่มนี้ คนกดเข้าหน้านี้จากแอปแล้วกลับ hub ไม่ได้ (แอปแบบ standalone ไม่มีแถบเบราว์เซอร์)
+     ‼️ วางมุมซ้ายล่าง เพราะมุมขวาล่างมีสวิตช์เปลี่ยนธีมอยู่แล้ว (.theme-switch ใน styles.css) -->
+<a id="hubBack" href="/hub?pick=1" style="display:none">
+  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+    <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+  </svg>
+  เครื่องมือ
+</a>
+<style>
+  #hubBack { position: fixed; left: max(14px, env(safe-area-inset-left)); bottom: calc(24px + env(safe-area-inset-bottom));
+    z-index: 9997; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px; text-decoration: none;
+    background: #fff; border: 1px solid #e5e7eb; color: #374151; font-size: 13px; font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+  @media print { #hubBack { display: none !important; } }
+</style>
+<script>
+  // standalone = เปิดจากแอปที่ติดตั้ง (navigator.standalone = iOS ที่ไม่รองรับ display-mode)
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    document.getElementById('hubBack').style.display = 'flex';
+  }
+</script>
+
   <header class="app-header">
     <h1>Curtain <span>Calculator</span></h1>
     <p class="tagline">v.2 Beta</p>
