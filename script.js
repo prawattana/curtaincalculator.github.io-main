@@ -751,14 +751,6 @@ bindAuto($(`#mosq-type-${id}`),recalcMosq);
 const secHoney = el('div', { className:'alt-box', id:`sec-honey-${id}`, style:'display:none' });
 
 secHoney.innerHTML = `
-<div class="form-group">
-<label>รูปแบบ:</label>
-<select id="honey-type-${id}">
-<option value="single">สไลด์เดี่ยว</option>
-<option value="center">แยกกลาง</option>
-</select>
-</div>
-
 <div class="alt-row">
 <div class="form-group">
 <label>กว้าง (เมตร):</label>
@@ -777,8 +769,6 @@ secHoney.innerHTML = `
 `;
 
 function recalcHoney(){
-
-const type = $(`#honey-type-${id}`).value;
 
 const w = toNum($(`#honey-w-${id}`).value);
 const h = toNum($(`#honey-h-${id}`).value);
@@ -806,7 +796,6 @@ autoSummarize();
 setTimeout(()=>{
 bindAuto($(`#honey-w-${id}`),recalcHoney);
 bindAuto($(`#honey-h-${id}`),recalcHoney);
-bindAuto($(`#honey-type-${id}`),recalcHoney);
 });
 
 // ===== SECTION: RG SAFETY NET (มุ้งนิรภัย RG) =====
@@ -1822,18 +1811,13 @@ if (st.honey > 0){
   const w = fmtSize(toNum($(`#honey-w-${id}`).value), $(`#honey-w-${id}`));
   const h = fmtSize(toNum($(`#honey-h-${id}`).value), $(`#honey-h-${id}`));
 
-  const type = $(`#honey-type-${id}`)?.value || '';
-  const typeText =
-    type === 'center' ? 'แยกกลาง' :
-    type === 'single' ? 'สไลด์เดี่ยว' : '';
-
   if(!blindsAgg.HONEY){
     blindsAgg.HONEY={label:'มุ้งรังผึ้ง',entries:[],total:0};
   }
 
   blindsAgg.HONEY.entries.push({
     id,
-    line:`${w}*${h} = ${fmt(st.honey)} บาท (${typeText})`,
+    line:`${w}*${h} = ${fmt(st.honey)} บาท`,
     amt: Math.round(st.honey)
   });
 
