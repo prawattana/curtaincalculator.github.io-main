@@ -309,6 +309,7 @@ function getCurtainCombos() {
 { label: 'มุ้งจีบนิรภัย (ราคาลูกค้าออนไลน์)', value: 'MOSQ|SAFE' },
 { label: 'มุ้งจีบ P-net หนาพิเศษ (ราคาลูกค้างานติดตั้ง)', value: 'MOSQ|PNET' },
 { label: 'มุ้งรังผึ้ง', value: 'HONEYCOMB' },
+{ label: 'มุ้งนิรภัย RG', value: 'RGNET' },
   ];
   return [...uniq.values(), ...extra];
 }
@@ -806,6 +807,71 @@ bindAuto($(`#honey-h-${id}`),recalcHoney);
 bindAuto($(`#honey-type-${id}`),recalcHoney);
 });
 
+// ===== SECTION: RG SAFETY NET (มุ้งนิรภัย RG) =====
+const secRgnet = el('div', { className:'alt-box', id:`sec-rgnet-${id}`, style:'display:none' });
+
+secRgnet.innerHTML = `
+<div class="form-group">
+<label>รูปแบบ:</label>
+<select id="rgnet-type-${id}">
+<option value="center">แยกกลาง</option>
+<option value="side">เก็บข้าง</option>
+</select>
+</div>
+
+<div class="alt-row">
+<div class="form-group">
+<label>กว้าง (เมตร):</label>
+<input type="number" id="rgnet-w-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>สูง (เมตร):</label>
+<input type="number" id="rgnet-h-${id}" step="0.01">
+</div>
+
+<div class="price-box" id="rgnet-price-${id}"></div>
+</div>
+
+<div class="note">* แยกกลาง 3,200 บาท/ตร.ม. ขั้นต่ำ 1.5 ตร.ม. / เก็บข้าง 2,800 บาท/ตร.ม. ขั้นต่ำ 1 ตร.ม.</div>
+`;
+
+function recalcRgnet(){
+
+const type = $(`#rgnet-type-${id}`).value;
+
+const w = toNum($(`#rgnet-w-${id}`).value);
+const h = toNum($(`#rgnet-h-${id}`).value);
+
+if(!w || !h){
+  $(`#rgnet-price-${id}`).textContent='';
+  items.get(id).rgnet=0;
+  autoSummarize();
+  return;
+}
+
+// แยกกลาง 3,200/ตร.ม. ขั้นต่ำ 1.5 ตร.ม. — เก็บข้าง 2,800/ตร.ม. ขั้นต่ำ 1 ตร.ม.
+const rate    = (type==="side") ? 2800 : 3200;
+const minArea = (type==="side") ? 1 : 1.5;
+
+let area = w*h;
+if(area < minArea) area = minArea;
+
+const total = area*rate;
+
+$(`#rgnet-price-${id}`).textContent = fmt(total)+' บาท';
+
+items.get(id).rgnet = total;
+
+autoSummarize();
+}
+
+setTimeout(()=>{
+bindAuto($(`#rgnet-w-${id}`),recalcRgnet);
+bindAuto($(`#rgnet-h-${id}`),recalcRgnet);
+bindAuto($(`#rgnet-type-${id}`),recalcRgnet);
+});
+
   // ===== FOOTER: ความสูงรวม (เพื่อสรุป) =====
   const foot = el('div', { className:'item-footer' });
   const hGroup = el('div', { className:'form-group grow' });
@@ -813,7 +879,7 @@ bindAuto($(`#honey-type-${id}`),recalcHoney);
   foot.append(hGroup);
 
   // ประกอบการ์ด
-card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, secHoney, foot);
+card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, secHoney, secRgnet, foot);
   $('#itemsContainer').append(card);
 
   setTimeout(() => {
@@ -836,6 +902,7 @@ card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, sec
   roller:0,
   mosq:0,
   honey:0,
+  rgnet:0,
   hookRing: 0,
   hookRingOpaque: false,
 hookRingSheer: false,
@@ -1451,6 +1518,7 @@ function hydrateCard(id){
   $(`#sec-roman-${id}`).style.display   = 'none';
   $(`#sec-roller-${id}`).style.display   = 'none';
   $(`#sec-honey-${id}`).style.display    = 'none';
+  $(`#sec-rgnet-${id}`).style.display    = 'none';
 
 
 
@@ -1545,6 +1613,10 @@ else if (v.startsWith('MOSQ|')) {
 }
 else if (v === 'HONEYCOMB') {
   $(`#sec-honey-${id}`).style.display='';
+  if (footerEl) footerEl.style.display='none';
+}
+else if (v === 'RGNET') {
+  $(`#sec-rgnet-${id}`).style.display='';
   if (footerEl) footerEl.style.display='none';
 }
   autoSummarize(true);
@@ -1767,6 +1839,30 @@ if (st.honey > 0){
   blindsAgg.HONEY.total+=st.honey;
 }
 
+// RG Safety Net (มุ้งนิรภัย RG)
+if (st.rgnet > 0){
+
+  const w = fmtSize(toNum($(`#rgnet-w-${id}`).value), $(`#rgnet-w-${id}`));
+  const h = fmtSize(toNum($(`#rgnet-h-${id}`).value), $(`#rgnet-h-${id}`));
+
+  const type = $(`#rgnet-type-${id}`)?.value || '';
+  const typeText =
+    type === 'center' ? 'แยกกลาง' :
+    type === 'side' ? 'เก็บข้าง' : '';
+
+  if(!blindsAgg.RGNET){
+    blindsAgg.RGNET={label:'มุ้งนิรภัย RG',entries:[],total:0};
+  }
+
+  blindsAgg.RGNET.entries.push({
+    id,
+    line:`${w}*${h} = ${fmt(st.rgnet)} บาท (${typeText})`,
+    amt: Math.round(st.rgnet)
+  });
+
+  blindsAgg.RGNET.total+=st.rgnet;
+}
+
 
 
     // โยนเข้ากลุ่ม “การ์ดเดี่ยวหมวด” (เพื่อรวมข้ามการ์ด)
@@ -1799,7 +1895,8 @@ st.kacee ||
 st.roman ||
 st.roller ||
 st.mosq ||
-st.honey;
+st.honey ||
+st.rgnet;
 
 if (!hasAny) continue;
 
@@ -1967,6 +2064,22 @@ if (blindsAgg.HONEY) {
 
 }
 
+// มุ้งนิรภัย RG
+if (blindsAgg.RGNET) {
+
+  const here = blindsAgg.RGNET.entries.filter(e => e.id === id);
+  const multi = blindsAgg.RGNET.entries.length >= 2;
+
+  if (!multi && here.length === 1) {
+
+    cardOut += `${blindsAgg.RGNET.label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+
+}
+
 
     // เงื่อนไขขึ้น “รวม … บาท” เฉพาะถ้ามี >= 2 หมวดในการ์ด
     if (cardOut.trim()) {
@@ -2021,6 +2134,9 @@ for (const k in blindsAgg) {
 // รวม มุ้งรังผึ้ง
 if (blindsAgg.HONEY && appendGroupBlock(blindsAgg.HONEY)) groupsPrinted++;
 
+// รวม มุ้งนิรภัย RG
+if (blindsAgg.RGNET && appendGroupBlock(blindsAgg.RGNET)) groupsPrinted++;
+
   // รวม ม่านพับ (ต่อ fabric ที่มีหลายการ์ด)
   for (const k of romanKeys) { if (appendGroupBlock(romanAgg[k])) groupsPrinted++; }
 
@@ -2043,6 +2159,7 @@ if (blindsAgg.HONEY && appendGroupBlock(blindsAgg.HONEY)) groupsPrinted++;
     .filter(k => k.startsWith('MOSQ_'))
     .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
   + (blindsAgg.HONEY && blindsAgg.HONEY.entries.length >= 2 ? blindsAgg.HONEY.total : 0)
+  + (blindsAgg.RGNET && blindsAgg.RGNET.entries.length >= 2 ? blindsAgg.RGNET.total : 0)
     output += `\n\nรวมทั้งหมด ${fmt(grand)} บาท`;
   }
 
