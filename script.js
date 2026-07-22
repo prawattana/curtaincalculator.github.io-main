@@ -727,7 +727,11 @@ if(brand==="PNET"){
   price=1500;
 }
 
-const total = w*h*price*q;
+// ราคาขั้นต่ำ 1 ตร.ม. — ต่ำกว่านั้นคิดที่ 1 ตร.ม.
+let area = w*h;
+if(area < 1) area = 1;
+
+const total = area*price*q;
 
 $(`#mosq-price-${id}`).textContent = fmt(total)+' บาท';
 
@@ -769,7 +773,7 @@ secHoney.innerHTML = `
 <div class="price-box" id="honey-price-${id}"></div>
 </div>
 
-<div class="note">* 1,800 บาท/ตร.ม. ขั้นต่ำ 1 ตร.ม. (แยกกลางขั้นต่ำ 2 ตร.ม.)</div>
+<div class="note">* 1,800 บาท/ตร.ม. ขั้นต่ำ 1 ตร.ม.</div>
 `;
 
 function recalcHoney(){
@@ -786,11 +790,9 @@ if(!w || !h){
   return;
 }
 
-// 1,800 บาท/ตร.ม. — ขั้นต่ำ 1 ตร.ม. / แยกกลางขั้นต่ำ 2 ตร.ม.
-const minArea = (type==="center") ? 2 : 1;
-
+// 1,800 บาท/ตร.ม. — ขั้นต่ำ 1 ตร.ม.
 let area = w*h;
-if(area < minArea) area = minArea;
+if(area < 1) area = 1;
 
 const total = area*1800;
 
@@ -833,7 +835,7 @@ secRgnet.innerHTML = `
 <div class="price-box" id="rgnet-price-${id}"></div>
 </div>
 
-<div class="note">* แยกกลาง 3,200 บาท/ตร.ม. ขั้นต่ำ 1.5 ตร.ม. / เก็บข้าง 2,800 บาท/ตร.ม. ขั้นต่ำ 1 ตร.ม.</div>
+<div class="note">* แยกกลาง 3,200 บาท/ตร.ม. / เก็บข้าง 2,800 บาท/ตร.ม. — ขั้นต่ำ 1 ตร.ม.</div>
 `;
 
 function recalcRgnet(){
@@ -850,12 +852,11 @@ if(!w || !h){
   return;
 }
 
-// แยกกลาง 3,200/ตร.ม. ขั้นต่ำ 1.5 ตร.ม. — เก็บข้าง 2,800/ตร.ม. ขั้นต่ำ 1 ตร.ม.
-const rate    = (type==="side") ? 2800 : 3200;
-const minArea = (type==="side") ? 1 : 1.5;
+// แยกกลาง 3,200/ตร.ม. — เก็บข้าง 2,800/ตร.ม. — ขั้นต่ำ 1 ตร.ม.
+const rate = (type==="side") ? 2800 : 3200;
 
 let area = w*h;
-if(area < minArea) area = minArea;
+if(area < 1) area = 1;
 
 const total = area*rate;
 
