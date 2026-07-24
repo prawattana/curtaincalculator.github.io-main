@@ -902,7 +902,7 @@ secValance.innerHTML = `
 <div class="price-box" id="valance-price-${id}"></div>
 </div>
 
-<div class="note">* ปกติ 750 บาท/เมตร / Blackout 950 บาท/เมตร</div>
+<div class="note">* ปกติ 750 บาท/เมตร / Blackout 950 บาท/เมตร — ขั้นต่ำ 1 เมตร</div>
 `;
 
 function recalcValance(){
@@ -921,7 +921,11 @@ if(!w){
 
 const rate = (type==="blackout") ? 950 : 750;
 
-const total = rate*w*q;
+// ขั้นต่ำ 1 เมตร (ต่ำกว่านั้นคิดที่ 1 เมตร)
+let len = w;
+if(len < 1) len = 1;
+
+const total = rate*len*q;
 
 $(`#valance-price-${id}`).textContent = fmt(total)+' บาท';
 
