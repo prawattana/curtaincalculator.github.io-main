@@ -310,6 +310,7 @@ function getCurtainCombos() {
 { label: 'มุ้งจีบ P-net หนาพิเศษ (ราคาลูกค้างานติดตั้ง)', value: 'MOSQ|PNET' },
 { label: 'มุ้งรังผึ้ง', value: 'HONEYCOMB' },
 { label: 'มุ้งนิรภัย RG', value: 'RGNET' },
+{ label: 'กล่องบังราง', value: 'VALANCE' },
   ];
   return [...uniq.values(), ...extra];
 }
@@ -875,6 +876,66 @@ bindAuto($(`#rgnet-h-${id}`),recalcRgnet);
 bindAuto($(`#rgnet-type-${id}`),recalcRgnet);
 });
 
+// ===== SECTION: VALANCE (กล่องบังราง) =====
+const secValance = el('div', { className:'alt-box', id:`sec-valance-${id}`, style:'display:none' });
+
+secValance.innerHTML = `
+<div class="form-group">
+<label>ชนิด:</label>
+<select id="valance-type-${id}">
+<option value="normal">ปกติ</option>
+<option value="blackout">Blackout</option>
+</select>
+</div>
+
+<div class="alt-row">
+<div class="form-group">
+<label>ความยาว (เมตร):</label>
+<input type="number" id="valance-w-${id}" min="0" step="0.01" placeholder="เช่น 2.50">
+</div>
+
+<div class="form-group">
+<label>จำนวน:</label>
+<input type="number" id="valance-q-${id}" min="1" value="1">
+</div>
+
+<div class="price-box" id="valance-price-${id}"></div>
+</div>
+
+<div class="note">* ปกติ 750 บาท/เมตร / Blackout 950 บาท/เมตร</div>
+`;
+
+function recalcValance(){
+
+const type = $(`#valance-type-${id}`).value;
+
+const w = toNum($(`#valance-w-${id}`).value);
+const q = Math.max(1, toNum($(`#valance-q-${id}`).value, 1));
+
+if(!w){
+  $(`#valance-price-${id}`).textContent='';
+  items.get(id).valance=0;
+  autoSummarize();
+  return;
+}
+
+const rate = (type==="blackout") ? 950 : 750;
+
+const total = rate*w*q;
+
+$(`#valance-price-${id}`).textContent = fmt(total)+' บาท';
+
+items.get(id).valance = total;
+
+autoSummarize();
+}
+
+setTimeout(()=>{
+bindAuto($(`#valance-w-${id}`),recalcValance);
+bindAuto($(`#valance-q-${id}`),recalcValance);
+bindAuto($(`#valance-type-${id}`),recalcValance);
+});
+
   // ===== FOOTER: ความสูงรวม (เพื่อสรุป) =====
   const foot = el('div', { className:'item-footer' });
   const hGroup = el('div', { className:'form-group grow' });
@@ -882,7 +943,7 @@ bindAuto($(`#rgnet-type-${id}`),recalcRgnet);
   foot.append(hGroup);
 
   // ประกอบการ์ด
-card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, secHoney, secRgnet, foot);
+card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, secHoney, secRgnet, secValance, foot);
   $('#itemsContainer').append(card);
 
   setTimeout(() => {
@@ -906,6 +967,7 @@ card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, sec
   mosq:0,
   honey:0,
   rgnet:0,
+  valance:0,
   hookRing: 0,
   hookRingOpaque: false,
 hookRingSheer: false,
@@ -1520,8 +1582,10 @@ function hydrateCard(id){
   $(`#sec-alu-${id}`).style.display     = 'none';
   $(`#sec-roman-${id}`).style.display   = 'none';
   $(`#sec-roller-${id}`).style.display   = 'none';
+  $(`#sec-mosq-${id}`).style.display     = 'none';
   $(`#sec-honey-${id}`).style.display    = 'none';
   $(`#sec-rgnet-${id}`).style.display    = 'none';
+  $(`#sec-valance-${id}`).style.display  = 'none';
 
 
 
@@ -1620,6 +1684,10 @@ else if (v === 'HONEYCOMB') {
 }
 else if (v === 'RGNET') {
   $(`#sec-rgnet-${id}`).style.display='';
+  if (footerEl) footerEl.style.display='none';
+}
+else if (v === 'VALANCE') {
+  $(`#sec-valance-${id}`).style.display='';
   if (footerEl) footerEl.style.display='none';
 }
   autoSummarize(true);
@@ -1866,6 +1934,28 @@ if (st.rgnet > 0){
   blindsAgg.RGNET.total+=st.rgnet;
 }
 
+// กล่องบังราง
+if (st.valance > 0){
+
+  const w = fmtSize(toNum($(`#valance-w-${id}`).value), $(`#valance-w-${id}`));
+  const q = Math.max(1, toNum($(`#valance-q-${id}`).value, 1));
+
+  const type = $(`#valance-type-${id}`)?.value || '';
+  const typeText = type === 'blackout' ? 'Blackout' : 'ปกติ';
+
+  if(!blindsAgg.VALANCE){
+    blindsAgg.VALANCE={label:'กล่องบังราง',entries:[],total:0};
+  }
+
+  blindsAgg.VALANCE.entries.push({
+    id,
+    line:`${w} ม. = ${q} ชุด ${fmt(st.valance)} บาท (${typeText})`,
+    amt: Math.round(st.valance)
+  });
+
+  blindsAgg.VALANCE.total+=st.valance;
+}
+
 
 
     // โยนเข้ากลุ่ม “การ์ดเดี่ยวหมวด” (เพื่อรวมข้ามการ์ด)
@@ -1899,7 +1989,8 @@ st.roman ||
 st.roller ||
 st.mosq ||
 st.honey ||
-st.rgnet;
+st.rgnet ||
+st.valance;
 
 if (!hasAny) continue;
 
@@ -2083,6 +2174,22 @@ if (blindsAgg.RGNET) {
 
 }
 
+// กล่องบังราง
+if (blindsAgg.VALANCE) {
+
+  const here = blindsAgg.VALANCE.entries.filter(e => e.id === id);
+  const multi = blindsAgg.VALANCE.entries.length >= 2;
+
+  if (!multi && here.length === 1) {
+
+    cardOut += `${blindsAgg.VALANCE.label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+
+}
+
 
     // เงื่อนไขขึ้น “รวม … บาท” เฉพาะถ้ามี >= 2 หมวดในการ์ด
     if (cardOut.trim()) {
@@ -2140,6 +2247,9 @@ if (blindsAgg.HONEY && appendGroupBlock(blindsAgg.HONEY)) groupsPrinted++;
 // รวม มุ้งนิรภัย RG
 if (blindsAgg.RGNET && appendGroupBlock(blindsAgg.RGNET)) groupsPrinted++;
 
+// รวม กล่องบังราง
+if (blindsAgg.VALANCE && appendGroupBlock(blindsAgg.VALANCE)) groupsPrinted++;
+
   // รวม ม่านพับ (ต่อ fabric ที่มีหลายการ์ด)
   for (const k of romanKeys) { if (appendGroupBlock(romanAgg[k])) groupsPrinted++; }
 
@@ -2163,6 +2273,7 @@ if (blindsAgg.RGNET && appendGroupBlock(blindsAgg.RGNET)) groupsPrinted++;
     .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
   + (blindsAgg.HONEY && blindsAgg.HONEY.entries.length >= 2 ? blindsAgg.HONEY.total : 0)
   + (blindsAgg.RGNET && blindsAgg.RGNET.entries.length >= 2 ? blindsAgg.RGNET.total : 0)
+  + (blindsAgg.VALANCE && blindsAgg.VALANCE.entries.length >= 2 ? blindsAgg.VALANCE.total : 0)
     output += `\n\nรวมทั้งหมด ${fmt(grand)} บาท`;
   }
 
@@ -2179,6 +2290,7 @@ function duplicateItem(srcId){
   const sheerVal    = $(`#sh-${srcId}`)?.value   || null;
   const aluModel    = $(`#alu-model-${srcId}`)?.value || null;
   const romanFabric = $(`#roman-fabric-${srcId}`)?.value || null;
+  const valanceType = $(`#valance-type-${srcId}`)?.value || null;
 
   const newId = addItem();
   $(`#combo-${newId}`).value = comboVal;
@@ -2205,6 +2317,10 @@ function duplicateItem(srcId){
       $(`#roman-fabric-${newId}`).value = romanFabric;
       $(`#roman-fabric-${newId}`).dispatchEvent(new Event('change'));
     }
+    if (valanceType && $(`#valance-type-${newId}`)) {
+      $(`#valance-type-${newId}`).value = valanceType;
+      $(`#valance-type-${newId}`).dispatchEvent(new Event('change'));
+    }
 
     // ล้างค่ากว้าง/สูง/จำนวนของการ์ดใหม่ให้ว่างหรือค่าเริ่มต้น
     const ids = [
@@ -2214,6 +2330,7 @@ function duplicateItem(srcId){
       `wb-w-${newId}`, `wb-h-${newId}`, `wb-q-${newId}`,
       `alu-w-${newId}`, `alu-h-${newId}`, `alu-q-${newId}`,
       `roman-w-${newId}`, `roman-q-${newId}`,
+      `valance-w-${newId}`,
       `h-${newId}`
     ];
     ids.forEach(cid => {
