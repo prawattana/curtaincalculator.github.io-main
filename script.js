@@ -192,9 +192,10 @@ if(ftype.includes("Blackout")) return 180;
 if(ftype.includes("Dimout") && ftype.includes("สูงพิเศษ")) return 150;
 if(ftype.includes("Dimout")) return 130;
 
-// sheer
+// sheer — แบบผ้าใหม่ (Mid-modern&Richy / อื่นๆ&Linen Pie) คิดเท่าของเดิมที่เป็นสูงพิเศษ/หนาพิเศษ
 if(ftype.includes("โปร่งหนาพิเศษ")) return 80;
 if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 80;
+if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie"))) return 80;
 if(ftype.includes("โปร่ง")) return 60;
 
 return 130;
@@ -217,6 +218,7 @@ if(ftype.includes("ลินิน")) return 2.8;
 // Sheer
 if(ftype.includes("โปร่งหนาพิเศษ")) return 3.2;
 if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 3.2;
+if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie"))) return 3.2;
 if(ftype.includes("โปร่ง")) return 2.8;
 
 return 2.8;
@@ -1262,7 +1264,10 @@ recalc();
     const row = sheerCurtainData.find(x => x.sheerFabricType === type || x.sheerCurtainType === type);
     const w = toNum($(`#sw-${id}`).value);
     const q = Math.max(1, toNum($(`#sq-${id}`).value, 2));
-    if (!row || !w) { $(`#sprice-${id}`).textContent = ''; items.get(id).sheer = 0; return; }
+    const priceEl = $(`#sprice-${id}`);
+    priceEl.style.color = '';
+    priceEl.title = '';
+    if (!row || !w) { priceEl.textContent = ''; items.get(id).sheer = 0; return; }
     let val = row.price * w * q;
 
 const h = toNum($(`#h-${id}`)?.value);
@@ -1270,6 +1275,18 @@ const over = $(`#overheight-sheer-${id}`)?.checked;
 
 if(!over){
   delete items.get(id).sheerMode;
+}
+
+// ผ้าโปร่งแต่ละแบบมีความสูงสูงสุดของมัน (maxHeight ใน priceData) — เกินแล้วไม่คิดราคาให้
+// ยกเว้นติ๊ก "สูงเกินหน้าผ้า" = ตั้งใจต่อผ้า/ขวางผ้า คิดจากหลาผ้าตามปกติ
+if(!over && row.maxHeight && h && h > row.maxHeight + 1e-9){
+  priceEl.style.color = '#d33';
+  // ข้อความสั้นให้พอดีกรอบราคา — รายละเอียดเต็มอยู่ใน tooltip (จิ้มค้าง/ชี้เมาส์)
+  priceEl.textContent = `⚠️ สูงได้ไม่เกิน ${row.maxHeight.toFixed(2)} ม.`;
+  priceEl.title = `ใส่สูง ${h.toFixed(2)} ม. เกินของผ้าแบบนี้ (ไม่เกิน ${row.maxHeight.toFixed(2)} ม.) — เปลี่ยนชนิดผ้าโปร่ง หรือติ๊ก "สูงเกินหน้าผ้า" เพื่อคิดแบบต่อผ้า`;
+  items.get(id).sheer = 0;
+  autoSummarize();
+  return;
 }
 
 if(over && h){
@@ -1616,7 +1633,10 @@ function hydrateCard(id){
     const sSel = $(`#sh-${id}`);
     sSel.innerHTML = sheers.map(s => {
       let label = s.sheerFabricType;
-      if (label.includes('หนาพิเศษ')) {
+      // ผ้าโปร่งแบบใหม่: วงเล็บบอกความสูงสูงสุดของผ้าแบบนั้นต่อท้ายชื่อ
+      if (s.maxHeight) {
+        label = `${label} (สูงไม่เกิน ${Number(s.maxHeight).toFixed(2)} ม.)`;
+      } else if (label.includes('หนาพิเศษ')) {
         label = label.replace('หนาพิเศษ', 'อื่นๆ') + ' (Linen Pie,โปร่งไม่มีในสต็อก)';
       } else if (label.includes('สูงพิเศษ')) {
         label = label + ' (สูงพิเศษ,Richy,Mid-modern)';
