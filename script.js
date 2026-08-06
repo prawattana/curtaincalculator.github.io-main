@@ -226,6 +226,15 @@ return 2.8;
 }
 
 
+// หน้าผ้าของผ้าโปร่ง — ยึดตามชนิดผ้าที่เลือก โดยดูความสูงสูงสุดของผ้าแบบนั้น (maxHeight ใน priceData)
+//   ไม่เกิน 2.70 (ลายเรียบ/ลายฝน 2.63 · ลอนเทป/สอด 2.70) = ผ้าหน้า 2.80
+//   มากกว่านั้น (เรียบขาวนวล 2.75/2.80 · ลายฝน-Mid-modern-Linen Pie 3.00) = ผ้าหน้า 3.20
+function getSheerFabricWidth(row, ftype){
+  const mh = Number(row && row.maxHeight);
+  if(mh > 0) return mh <= 2.70 + 1e-9 ? 2.8 : 3.2;
+  return getDefaultFabricWidth(String(ftype || ''));
+}
+
 // ปัดสำหรับ lookup ตารางมู่ลี่: ถ้าใส่ทศนิยม "สองตำแหน่ง" ให้ปัดที่หลักร้อย (2nd decimal)
 // 0-4 ลง, 5-9 ขึ้น -> ให้ได้ค่าเป็น "ทศนิยม 1 ตำแหน่ง"
 function lookupTenthByHundredths(rawStr) {
@@ -1071,6 +1080,9 @@ overBox.innerHTML = `
 </label>
 `;
 
+// ชนิดผ้าที่ตั้งหน้าผ้าให้ล่าสุด — เปลี่ยนชนิดผ้าเมื่อไหร่ค่อยตั้งหน้าผ้าใหม่
+let lastOpaqueType = null;
+
 const fabricSel = el('span',{
 id:`fabricWidthOpaqueBox-${id}`,
 style:'display:none;margin-left:6px;'
@@ -1104,6 +1116,7 @@ const [ctype, ftype] = (valStr || '').split('|');
 const def = getDefaultFabricWidth(ftype);
 
 $(`#fabricWidthOpaque-${id}`).value = def;
+lastOpaqueType = ftype;
 
 }
 
@@ -1144,6 +1157,12 @@ if(!over){
 }
 
 if(over && h){
+
+// เปลี่ยนชนิดผ้า → ปรับหน้าผ้าตามผ้าแบบใหม่ให้เอง
+if(lastOpaqueType !== ftype){
+  $(`#fabricWidthOpaque-${id}`).value = getDefaultFabricWidth(ftype || '');
+  lastOpaqueType = ftype;
+}
 
 const fabricWidth = parseFloat($(`#fabricWidthOpaque-${id}`).value);
 
@@ -1217,6 +1236,10 @@ overBox.innerHTML = `
 </label>
 `;
 
+// ชนิดผ้าโปร่งที่ตั้งหน้าผ้าให้ล่าสุด — เปลี่ยนชนิดผ้าเมื่อไหร่ค่อยตั้งหน้าผ้าใหม่
+// (ไม่ตั้งทับทุกครั้ง เผื่อคนเลือกหน้าผ้าเองแล้วมาแก้ความกว้าง/ความสูงต่อ)
+let lastSheerType = null;
+
 const fabricSel = el('span',{
 id:`fabricWidthSheerBox-${id}`,
 style:'display:none;margin-left:6px;'
@@ -1245,10 +1268,10 @@ box.style.display = chk.checked ? 'inline-block' : 'none';
 if(chk.checked){
 
 const type = $(`#sh-${id}`).value;
+const row = sheerCurtainData.find(x => x.sheerFabricType === type || x.sheerCurtainType === type);
 
-const def = getDefaultFabricWidth(type);
-
-$(`#fabricWidthSheer-${id}`).value = def;
+$(`#fabricWidthSheer-${id}`).value = getSheerFabricWidth(row, type);
+lastSheerType = type;
 
 }
 
@@ -1290,6 +1313,12 @@ if(!over && row.maxHeight && h && h > row.maxHeight + 1e-9){
 }
 
 if(over && h){
+
+// เปลี่ยนชนิดผ้าโปร่ง → ปรับหน้าผ้าตามผ้าแบบใหม่ให้เอง
+if(lastSheerType !== type){
+  $(`#fabricWidthSheer-${id}`).value = getSheerFabricWidth(row, type);
+  lastSheerType = type;
+}
 
 const fabricWidth = parseFloat($(`#fabricWidthSheer-${id}`).value);
 
