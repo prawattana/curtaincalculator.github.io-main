@@ -182,7 +182,14 @@ return totalCost * profit * qty;
 
 }
 
-function getFabricYardPrice(ftype){
+// ราคาผ้าต่อหลา (ต้นทุน) — ผ้าโปร่งคิดตาม "หน้าผ้า" ที่ใช้จริง: 2.80 = 60 · 3.20 = 90
+// (ผ้าโปร่งหน้า 3.20 คือ เรียบขาวนวล / ลายฝน / Mid-modern&Richy / อื่นๆ&Linen Pie)
+function getFabricYardPrice(ftype, fabricWidth){
+
+// sheer — รู้หน้าผ้าแล้วให้ยึดหน้าผ้าเป็นหลัก
+if(ftype.includes("โปร่ง") && fabricWidth){
+return Number(fabricWidth) >= 3.2 ? 90 : 60;
+}
 
 // blackout
 if(ftype.includes("Blackout") && ftype.includes("สูงพิเศษ")) return 230;
@@ -192,10 +199,10 @@ if(ftype.includes("Blackout")) return 180;
 if(ftype.includes("Dimout") && ftype.includes("สูงพิเศษ")) return 150;
 if(ftype.includes("Dimout")) return 130;
 
-// sheer — แบบผ้าใหม่ (Mid-modern&Richy / อื่นๆ&Linen Pie) คิดเท่าของเดิมที่เป็นสูงพิเศษ/หนาพิเศษ
-if(ftype.includes("โปร่งหนาพิเศษ")) return 80;
-if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 80;
-if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie"))) return 80;
+// sheer — เผื่อกรณีไม่รู้หน้าผ้า (ผ้าหน้า 3.20 = 90 บาท)
+if(ftype.includes("โปร่งหนาพิเศษ")) return 90;
+if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 90;
+if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie"))) return 90;
 if(ftype.includes("โปร่ง")) return 60;
 
 return 130;
@@ -1330,7 +1337,7 @@ items.get(id).sheerMode = mode;
 
 if(mode === "ต่อผ้า" || mode === "ขวางผ้า"){
 
-const pricePerYard = getFabricYardPrice(type);
+const pricePerYard = getFabricYardPrice(type, fabricWidth);
 
 val = calcJoinFabricCost(
 w,
