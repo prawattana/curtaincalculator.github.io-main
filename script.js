@@ -202,7 +202,7 @@ if(ftype.includes("Dimout")) return 130;
 // sheer — เผื่อกรณีไม่รู้หน้าผ้า (ผ้าหน้า 3.20 = 90 บาท)
 if(ftype.includes("โปร่งหนาพิเศษ")) return 90;
 if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 90;
-if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie"))) return 90;
+if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie") || ftype.includes("เล่มจิง"))) return 90;
 if(ftype.includes("โปร่ง")) return 60;
 
 return 130;
@@ -225,7 +225,7 @@ if(ftype.includes("ลินิน")) return 2.8;
 // Sheer
 if(ftype.includes("โปร่งหนาพิเศษ")) return 3.2;
 if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 3.2;
-if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie"))) return 3.2;
+if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie") || ftype.includes("เล่มจิง"))) return 3.2;
 if(ftype.includes("โปร่ง")) return 2.8;
 
 return 2.8;

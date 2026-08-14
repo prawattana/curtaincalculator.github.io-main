@@ -315,6 +315,12 @@
     },
     {
       "sheerCurtainType": "ผ้าโปร่งตาไก่",
+      "sheerFabricType": "ผ้าโปร่งตาไก่ รุ่นเล่มจิงๆ",
+      "price": 339,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งตาไก่",
       "sheerFabricType": "ผ้าโปร่งตาไก่ อื่นๆ&Linen Pie",
       "price": 359,
       "maxHeight": 3
@@ -340,6 +346,12 @@
     {
       "sheerCurtainType": "ผ้าโปร่งซ่อนหู",
       "sheerFabricType": "ผ้าโปร่งซ่อนหู Mid-modern&Richy",
+      "price": 339,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งซ่อนหู",
+      "sheerFabricType": "ผ้าโปร่งซ่อนหู รุ่นเล่มจิงๆ",
       "price": 339,
       "maxHeight": 3
     },
@@ -375,6 +387,12 @@
     },
     {
       "sheerCurtainType": "ผ้าโปร่งลอนตะขอ",
+      "sheerFabricType": "ผ้าโปร่งลอนตะขอ รุ่นเล่มจิงๆ",
+      "price": 339,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนตะขอ",
       "sheerFabricType": "ผ้าโปร่งลอนตะขอ อื่นๆ&Linen Pie",
       "price": 359,
       "maxHeight": 3
@@ -400,6 +418,12 @@
     {
       "sheerCurtainType": "ผ้าโปร่งคอกระเช้า",
       "sheerFabricType": "ผ้าโปร่งคอกระเช้า Mid-modern&Richy",
+      "price": 339,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งคอกระเช้า",
+      "sheerFabricType": "ผ้าโปร่งคอกระเช้า รุ่นเล่มจิงๆ",
       "price": 339,
       "maxHeight": 3
     },
@@ -435,6 +459,12 @@
     },
     {
       "sheerCurtainType": "ผ้าโปร่งม่านจีบ",
+      "sheerFabricType": "ผ้าโปร่งม่านจีบ รุ่นเล่มจิงๆ",
+      "price": 699,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งม่านจีบ",
       "sheerFabricType": "ผ้าโปร่งม่านจีบ อื่นๆ&Linen Pie",
       "price": 739,
       "maxHeight": 3
@@ -460,6 +490,12 @@
     {
       "sheerCurtainType": "ผ้าโปร่งลอนเทป",
       "sheerFabricType": "ผ้าโปร่งลอนเทป Mid-modern&Richy",
+      "price": 799,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนเทป",
+      "sheerFabricType": "ผ้าโปร่งลอนเทป รุ่นเล่มจิงๆ",
       "price": 799,
       "maxHeight": 3
     },
@@ -495,6 +531,12 @@
     },
     {
       "sheerCurtainType": "ผ้าโปร่งม่านสอด",
+      "sheerFabricType": "ผ้าโปร่งม่านสอด รุ่นเล่มจิงๆ",
+      "price": 309,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งม่านสอด",
       "sheerFabricType": "ผ้าโปร่งม่านสอด อื่นๆ&Linen Pie",
       "price": 339,
       "maxHeight": 3
@@ -520,6 +562,12 @@
     {
       "sheerCurtainType": "ผ้าโปร่งลอนโซ่",
       "sheerFabricType": "ผ้าโปร่งลอนโซ่ Mid-modern&Richy",
+      "price": 339,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนโซ่",
+      "sheerFabricType": "ผ้าโปร่งลอนโซ่ รุ่นเล่มจิงๆ",
       "price": 339,
       "maxHeight": 3
     },
