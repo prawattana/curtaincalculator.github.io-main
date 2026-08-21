@@ -328,6 +328,9 @@ function getCurtainCombos() {
 { label: 'มุ้งจีบ P-net หนาพิเศษ (ราคาลูกค้างานติดตั้ง)', value: 'MOSQ|PNET' },
 { label: 'มุ้งรังผึ้ง', value: 'HONEYCOMB' },
 { label: 'มุ้งนิรภัย RG', value: 'RGNET' },
+{ label: 'มุ้งแม่เหล็ก', value: 'MAGNET' },
+{ label: 'มุ้งบานเลื่อน', value: 'FRAMENET|SLIDE' },
+{ label: 'มุ้งบานสวิง', value: 'FRAMENET|SWING' },
 { label: 'กล่องบังราง', value: 'VALANCE' },
   ];
   return [...uniq.values(), ...extra];
@@ -746,9 +749,11 @@ if(brand==="PNET"){
   price=1500;
 }
 
-// ราคาขั้นต่ำ 1 ตร.ม. — ต่ำกว่านั้นคิดที่ 1 ตร.ม.
+// ขั้นต่ำ 1 ตร.ม. — แยกกลางขั้นต่ำ 1.5 ตร.ม.
+const minArea = (type==="center") ? 1.5 : 1;
+
 let area = w*h;
-if(area < 1) area = 1;
+if(area < minArea) area = minArea;
 
 const total = area*price*q;
 
@@ -770,12 +775,22 @@ bindAuto($(`#mosq-type-${id}`),recalcMosq);
 const secHoney = el('div', { className:'alt-box', id:`sec-honey-${id}`, style:'display:none' });
 
 secHoney.innerHTML = `
+<div class="alt-row">
+<div class="form-group">
+<label>ชนิดผ้า:</label>
+<select id="honey-fabric-${id}">
+<option value="blackout">Black out (1,800/ตร.ม.)</option>
+<option value="dimout">Dim out (1,700/ตร.ม.)</option>
+</select>
+</div>
+
 <div class="form-group">
 <label>รูปแบบ:</label>
 <select id="honey-type-${id}">
 <option value="single">สไลด์เดี่ยว</option>
 <option value="center">แยกกลาง</option>
 </select>
+</div>
 </div>
 
 <div class="alt-row">
@@ -792,12 +807,20 @@ secHoney.innerHTML = `
 <div class="price-box" id="honey-price-${id}"></div>
 </div>
 
-<div class="note">* 1,800 บาท/ตร.ม. ขั้นต่ำ 1 ตร.ม. (แยกกลางขั้นต่ำ 2 ตร.ม.)</div>
+<div class="form-group">
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<input type="checkbox" id="honey-diy-${id}"> งาน DIY หักมุม (+1,000 บาท)
+</label>
+</div>
+
+<div class="note">* Black out 1,800 / Dim out 1,700 บาท/ตร.ม. ขั้นต่ำ 1 ตร.ม. (แยกกลางขั้นต่ำ 2 ตร.ม.)</div>
 `;
 
 function recalcHoney(){
 
 const type = $(`#honey-type-${id}`).value;
+const fabric = $(`#honey-fabric-${id}`)?.value || 'blackout';
+const diy = !!$(`#honey-diy-${id}`)?.checked;
 
 const w = toNum($(`#honey-w-${id}`).value);
 const h = toNum($(`#honey-h-${id}`).value);
@@ -809,13 +832,15 @@ if(!w || !h){
   return;
 }
 
-// 1,800 บาท/ตร.ม. — ขั้นต่ำ 1 ตร.ม. / แยกกลางขั้นต่ำ 2 ตร.ม.
+// Black out 1,800 / Dim out 1,700 บาท/ตร.ม. — ขั้นต่ำ 1 ตร.ม. / แยกกลางขั้นต่ำ 2 ตร.ม.
+const rate = (fabric==="dimout") ? 1700 : 1800;
 const minArea = (type==="center") ? 2 : 1;
 
 let area = w*h;
 if(area < minArea) area = minArea;
 
-const total = area*1800;
+// งาน DIY หักมุม คิดเพิ่ม 1,000 บาท
+const total = area*rate + (diy ? 1000 : 0);
 
 $(`#honey-price-${id}`).textContent = fmt(total)+' บาท';
 
@@ -828,6 +853,8 @@ setTimeout(()=>{
 bindAuto($(`#honey-w-${id}`),recalcHoney);
 bindAuto($(`#honey-h-${id}`),recalcHoney);
 bindAuto($(`#honey-type-${id}`),recalcHoney);
+bindAuto($(`#honey-fabric-${id}`),recalcHoney);
+bindAuto($(`#honey-diy-${id}`),recalcHoney);
 });
 
 // ===== SECTION: RG SAFETY NET (มุ้งนิรภัย RG) =====
@@ -856,7 +883,7 @@ secRgnet.innerHTML = `
 <div class="price-box" id="rgnet-price-${id}"></div>
 </div>
 
-<div class="note">* แยกกลาง 3,200 บาท/ตร.ม. / เก็บข้าง 2,800 บาท/ตร.ม. — ขั้นต่ำ 1 ตร.ม.</div>
+<div class="note">* แยกกลาง 3,200 บาท/ตร.ม. (ขั้นต่ำ 1.5 ตร.ม.) / เก็บข้าง 2,800 บาท/ตร.ม. (ขั้นต่ำ 1 ตร.ม.)</div>
 `;
 
 function recalcRgnet(){
@@ -873,11 +900,12 @@ if(!w || !h){
   return;
 }
 
-// แยกกลาง 3,200/ตร.ม. — เก็บข้าง 2,800/ตร.ม. — ขั้นต่ำ 1 ตร.ม.
+// แยกกลาง 3,200/ตร.ม. (ขั้นต่ำ 1.5 ตร.ม.) — เก็บข้าง 2,800/ตร.ม. (ขั้นต่ำ 1 ตร.ม.)
 const rate = (type==="side") ? 2800 : 3200;
+const minArea = (type==="side") ? 1 : 1.5;
 
 let area = w*h;
-if(area < 1) area = 1;
+if(area < minArea) area = minArea;
 
 const total = area*rate;
 
@@ -892,6 +920,128 @@ setTimeout(()=>{
 bindAuto($(`#rgnet-w-${id}`),recalcRgnet);
 bindAuto($(`#rgnet-h-${id}`),recalcRgnet);
 bindAuto($(`#rgnet-type-${id}`),recalcRgnet);
+});
+
+// ===== SECTION: MAGNET (มุ้งแม่เหล็ก) =====
+// 1,100 บาท/ตร.ม. — ขั้นต่ำ 0.5 ตร.ม.
+const secMagnet = el('div', { className:'alt-box', id:`sec-magnet-${id}`, style:'display:none' });
+
+secMagnet.innerHTML = `
+<div class="alt-row">
+<div class="form-group">
+<label>กว้าง (เมตร):</label>
+<input type="number" id="magnet-w-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>สูง (เมตร):</label>
+<input type="number" id="magnet-h-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>จำนวนชุด:</label>
+<input type="number" id="magnet-q-${id}" min="1" value="1">
+</div>
+
+<div class="price-box" id="magnet-price-${id}"></div>
+</div>
+
+<div class="note">* 1,100 บาท/ตร.ม. ขั้นต่ำ 0.5 ตร.ม.</div>
+`;
+
+function recalcMagnet(){
+
+const w = toNum($(`#magnet-w-${id}`).value);
+const h = toNum($(`#magnet-h-${id}`).value);
+const q = Math.max(1, toNum($(`#magnet-q-${id}`).value, 1));
+
+if(!w || !h){
+  $(`#magnet-price-${id}`).textContent='';
+  items.get(id).magnet=0;
+  autoSummarize();
+  return;
+}
+
+let area = w*h;
+if(area < 0.5) area = 0.5;
+
+const total = area*1100*q;
+
+$(`#magnet-price-${id}`).textContent = fmt(total)+' บาท';
+
+items.get(id).magnet = total;
+
+autoSummarize();
+}
+
+setTimeout(()=>{
+bindAuto($(`#magnet-w-${id}`),recalcMagnet);
+bindAuto($(`#magnet-h-${id}`),recalcMagnet);
+bindAuto($(`#magnet-q-${id}`),recalcMagnet);
+});
+
+// ===== SECTION: FRAME NET (มุ้งบานเลื่อน / มุ้งบานสวิง) =====
+// คิดตามเมตรรอบกรอบ: (กว้าง + สูง) x 2 x 370 บาท · ใส่มุ้งกันแมวเพิ่มชุดละ 1,000 บาท
+const secFramenet = el('div', { className:'alt-box', id:`sec-framenet-${id}`, style:'display:none' });
+
+secFramenet.innerHTML = `
+<div class="alt-row">
+<div class="form-group">
+<label>กว้าง (เมตร):</label>
+<input type="number" id="framenet-w-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>สูง (เมตร):</label>
+<input type="number" id="framenet-h-${id}" step="0.01">
+</div>
+
+<div class="form-group">
+<label>จำนวนชุด:</label>
+<input type="number" id="framenet-q-${id}" min="1" value="1">
+</div>
+
+<div class="price-box" id="framenet-price-${id}"></div>
+</div>
+
+<div class="form-group">
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<input type="checkbox" id="framenet-cat-${id}"> ใส่มุ้งกันแมว (+1,000 บาท/ชุด)
+</label>
+</div>
+
+<div class="note">* เมตรละ 370 บาท คิดตามเมตรรอบกรอบ = (กว้าง + สูง) x 2</div>
+`;
+
+function recalcFramenet(){
+
+const w = toNum($(`#framenet-w-${id}`).value);
+const h = toNum($(`#framenet-h-${id}`).value);
+const q = Math.max(1, toNum($(`#framenet-q-${id}`).value, 1));
+const cat = !!$(`#framenet-cat-${id}`)?.checked;
+
+if(!w || !h){
+  $(`#framenet-price-${id}`).textContent='';
+  items.get(id).framenet=0;
+  autoSummarize();
+  return;
+}
+
+const perimeter = (w + h) * 2;              // เมตรรอบกรอบ
+const total = (perimeter * 370 + (cat ? 1000 : 0)) * q;
+
+$(`#framenet-price-${id}`).textContent = fmt(total)+' บาท';
+
+items.get(id).framenet = total;
+
+autoSummarize();
+}
+
+setTimeout(()=>{
+bindAuto($(`#framenet-w-${id}`),recalcFramenet);
+bindAuto($(`#framenet-h-${id}`),recalcFramenet);
+bindAuto($(`#framenet-q-${id}`),recalcFramenet);
+bindAuto($(`#framenet-cat-${id}`),recalcFramenet);
 });
 
 // ===== SECTION: VALANCE (กล่องบังราง) =====
@@ -965,7 +1115,7 @@ bindAuto($(`#valance-type-${id}`),recalcValance);
   foot.append(hGroup);
 
   // ประกอบการ์ด
-card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, secHoney, secRgnet, secValance, foot);
+card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, secHoney, secRgnet, secMagnet, secFramenet, secValance, foot);
   $('#itemsContainer').append(card);
 
   setTimeout(() => {
@@ -989,6 +1139,8 @@ card.append(head, secCurtain, secWood, secAlu, secRoman, secRoller, secMosq, sec
   mosq:0,
   honey:0,
   rgnet:0,
+  magnet:0,
+  framenet:0,
   valance:0,
   hookRing: 0,
   hookRingOpaque: false,
@@ -1642,6 +1794,8 @@ function hydrateCard(id){
   $(`#sec-mosq-${id}`).style.display     = 'none';
   $(`#sec-honey-${id}`).style.display    = 'none';
   $(`#sec-rgnet-${id}`).style.display    = 'none';
+  $(`#sec-magnet-${id}`).style.display   = 'none';
+  $(`#sec-framenet-${id}`).style.display = 'none';
   $(`#sec-valance-${id}`).style.display  = 'none';
 
 
@@ -1744,6 +1898,14 @@ else if (v === 'HONEYCOMB') {
 }
 else if (v === 'RGNET') {
   $(`#sec-rgnet-${id}`).style.display='';
+  if (footerEl) footerEl.style.display='none';
+}
+else if (v === 'MAGNET') {
+  $(`#sec-magnet-${id}`).style.display='';
+  if (footerEl) footerEl.style.display='none';
+}
+else if (v.startsWith('FRAMENET|')) {
+  $(`#sec-framenet-${id}`).style.display='';
   if (footerEl) footerEl.style.display='none';
 }
 else if (v === 'VALANCE') {
@@ -1957,17 +2119,23 @@ if (st.honey > 0){
     type === 'center' ? 'แยกกลาง' :
     type === 'single' ? 'สไลด์เดี่ยว' : '';
 
-  if(!blindsAgg.HONEY){
-    blindsAgg.HONEY={label:'มุ้งรังผึ้ง',entries:[],total:0};
+  const fabric = $(`#honey-fabric-${id}`)?.value || 'blackout';
+  const fabricText = fabric === 'dimout' ? 'Dim out' : 'Black out';
+  const diy = !!$(`#honey-diy-${id}`)?.checked;
+
+  const key = `HONEY_${fabric}`;
+
+  if(!blindsAgg[key]){
+    blindsAgg[key]={label:`มุ้งรังผึ้ง ${fabricText}`,entries:[],total:0};
   }
 
-  blindsAgg.HONEY.entries.push({
+  blindsAgg[key].entries.push({
     id,
-    line:`${w}*${h} = ${fmt(st.honey)} บาท (${typeText})`,
+    line:`${w}*${h} = ${fmt(st.honey)} บาท (${typeText}${diy ? ' · DIY หักมุม' : ''})`,
     amt: Math.round(st.honey)
   });
 
-  blindsAgg.HONEY.total+=st.honey;
+  blindsAgg[key].total+=st.honey;
 }
 
 // RG Safety Net (มุ้งนิรภัย RG)
@@ -1992,6 +2160,51 @@ if (st.rgnet > 0){
   });
 
   blindsAgg.RGNET.total+=st.rgnet;
+}
+
+// มุ้งแม่เหล็ก
+if (st.magnet > 0){
+
+  const w = fmtSize(toNum($(`#magnet-w-${id}`).value), $(`#magnet-w-${id}`));
+  const h = fmtSize(toNum($(`#magnet-h-${id}`).value), $(`#magnet-h-${id}`));
+  const q = Math.max(1, toNum($(`#magnet-q-${id}`).value, 1));
+
+  if(!blindsAgg.MAGNET){
+    blindsAgg.MAGNET={label:'มุ้งแม่เหล็ก',entries:[],total:0};
+  }
+
+  blindsAgg.MAGNET.entries.push({
+    id,
+    line:`${w}*${h} = ${q} ชุด ${fmt(st.magnet)} บาท`,
+    amt: Math.round(st.magnet)
+  });
+
+  blindsAgg.MAGNET.total+=st.magnet;
+}
+
+// มุ้งบานเลื่อน / มุ้งบานสวิง (คิดตามเมตรรอบกรอบ)
+if (st.framenet > 0){
+
+  const w = fmtSize(toNum($(`#framenet-w-${id}`).value), $(`#framenet-w-${id}`));
+  const h = fmtSize(toNum($(`#framenet-h-${id}`).value), $(`#framenet-h-${id}`));
+  const q = Math.max(1, toNum($(`#framenet-q-${id}`).value, 1));
+  const cat = !!$(`#framenet-cat-${id}`)?.checked;
+
+  const kind = ($(`#combo-${id}`).value.split('|')[1]) || 'SLIDE';
+  const label = kind === 'SWING' ? 'มุ้งบานสวิง' : 'มุ้งบานเลื่อน';
+  const key = `FRAMENET_${kind}`;
+
+  if(!blindsAgg[key]){
+    blindsAgg[key]={label,entries:[],total:0};
+  }
+
+  blindsAgg[key].entries.push({
+    id,
+    line:`${w}*${h} = ${q} ชุด ${fmt(st.framenet)} บาท${cat ? ' (มุ้งกันแมว)' : ''}`,
+    amt: Math.round(st.framenet)
+  });
+
+  blindsAgg[key].total+=st.framenet;
 }
 
 // กล่องบังราง
@@ -2050,6 +2263,8 @@ st.roller ||
 st.mosq ||
 st.honey ||
 st.rgnet ||
+st.magnet ||
+st.framenet ||
 st.valance;
 
 if (!hasAny) continue;
@@ -2202,15 +2417,17 @@ for (const k in blindsAgg) {
 
 }
 
-// มุ้งรังผึ้ง
-if (blindsAgg.HONEY) {
+// มุ้งรังผึ้ง (แยกตามชนิดผ้า)
+for (const k in blindsAgg) {
 
-  const here = blindsAgg.HONEY.entries.filter(e => e.id === id);
-  const multi = blindsAgg.HONEY.entries.length >= 2;
+  if (!k.startsWith('HONEY_')) continue;
+
+  const here = blindsAgg[k].entries.filter(e => e.id === id);
+  const multi = blindsAgg[k].entries.length >= 2;
 
   if (!multi && here.length === 1) {
 
-    cardOut += `${blindsAgg.HONEY.label}\n${here[0].line}\n`;
+    cardOut += `${blindsAgg[k].label}\n${here[0].line}\n`;
     cardTotal += here[0].amt;
     blockCount++;
 
@@ -2227,6 +2444,40 @@ if (blindsAgg.RGNET) {
   if (!multi && here.length === 1) {
 
     cardOut += `${blindsAgg.RGNET.label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+
+}
+
+// มุ้งแม่เหล็ก
+if (blindsAgg.MAGNET) {
+
+  const here = blindsAgg.MAGNET.entries.filter(e => e.id === id);
+  const multi = blindsAgg.MAGNET.entries.length >= 2;
+
+  if (!multi && here.length === 1) {
+
+    cardOut += `${blindsAgg.MAGNET.label}\n${here[0].line}\n`;
+    cardTotal += here[0].amt;
+    blockCount++;
+
+  }
+
+}
+
+// มุ้งบานเลื่อน / มุ้งบานสวิง
+for (const k in blindsAgg) {
+
+  if (!k.startsWith('FRAMENET_')) continue;
+
+  const here = blindsAgg[k].entries.filter(e => e.id === id);
+  const multi = blindsAgg[k].entries.length >= 2;
+
+  if (!multi && here.length === 1) {
+
+    cardOut += `${blindsAgg[k].label}\n${here[0].line}\n`;
     cardTotal += here[0].amt;
     blockCount++;
 
@@ -2301,11 +2552,25 @@ for (const k in blindsAgg) {
   }
 }
 
-// รวม มุ้งรังผึ้ง
-if (blindsAgg.HONEY && appendGroupBlock(blindsAgg.HONEY)) groupsPrinted++;
+// รวม มุ้งรังผึ้ง (แยกตามชนิดผ้า)
+for (const k in blindsAgg) {
+  if (k.startsWith('HONEY_')) {
+    if (appendGroupBlock(blindsAgg[k])) groupsPrinted++;
+  }
+}
 
 // รวม มุ้งนิรภัย RG
 if (blindsAgg.RGNET && appendGroupBlock(blindsAgg.RGNET)) groupsPrinted++;
+
+// รวม มุ้งแม่เหล็ก
+if (blindsAgg.MAGNET && appendGroupBlock(blindsAgg.MAGNET)) groupsPrinted++;
+
+// รวม มุ้งบานเลื่อน / มุ้งบานสวิง
+for (const k in blindsAgg) {
+  if (k.startsWith('FRAMENET_')) {
+    if (appendGroupBlock(blindsAgg[k])) groupsPrinted++;
+  }
+}
 
 // รวม กล่องบังราง
 if (blindsAgg.VALANCE && appendGroupBlock(blindsAgg.VALANCE)) groupsPrinted++;
@@ -2331,8 +2596,14 @@ if (blindsAgg.VALANCE && appendGroupBlock(blindsAgg.VALANCE)) groupsPrinted++;
 + Object.keys(blindsAgg)
     .filter(k => k.startsWith('MOSQ_'))
     .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
-  + (blindsAgg.HONEY && blindsAgg.HONEY.entries.length >= 2 ? blindsAgg.HONEY.total : 0)
+  + Object.keys(blindsAgg)
+    .filter(k => k.startsWith('HONEY_'))
+    .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
   + (blindsAgg.RGNET && blindsAgg.RGNET.entries.length >= 2 ? blindsAgg.RGNET.total : 0)
+  + (blindsAgg.MAGNET && blindsAgg.MAGNET.entries.length >= 2 ? blindsAgg.MAGNET.total : 0)
+  + Object.keys(blindsAgg)
+    .filter(k => k.startsWith('FRAMENET_'))
+    .reduce((s,k)=> s + (blindsAgg[k].entries.length >= 2 ? blindsAgg[k].total : 0), 0)
   + (blindsAgg.VALANCE && blindsAgg.VALANCE.entries.length >= 2 ? blindsAgg.VALANCE.total : 0)
     output += `\n\nรวมทั้งหมด ${fmt(grand)} บาท`;
   }
@@ -2390,6 +2661,8 @@ function duplicateItem(srcId){
       `wb-w-${newId}`, `wb-h-${newId}`, `wb-q-${newId}`,
       `alu-w-${newId}`, `alu-h-${newId}`, `alu-q-${newId}`,
       `roman-w-${newId}`, `roman-q-${newId}`,
+      `magnet-w-${newId}`, `magnet-h-${newId}`, `magnet-q-${newId}`,
+      `framenet-w-${newId}`, `framenet-h-${newId}`, `framenet-q-${newId}`,
       `valance-w-${newId}`,
       `h-${newId}`
     ];
