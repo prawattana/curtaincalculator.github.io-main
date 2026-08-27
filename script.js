@@ -303,6 +303,17 @@ function bindAuto(el, fn) {
 }
 
 /*******************************
+ * ม่านม้วน / ม่านปรับแสง / ม่านม้วนสลับ (ตารางราคาอยู่ใน priceData.json)
+ *******************************/
+function rollerRow(code){
+  return rollerCurtainData.find(r => r.code === code) || null;
+}
+function rollerLabel(code){
+  const r = rollerRow(code);
+  return r ? `${r.group} ${r.name}` : `ม่านม้วน ${code}`;
+}
+
+/*******************************
  * รวมตัวเลือกบนสุดของการ์ด
  *******************************/
 function getCurtainCombos() {
@@ -320,9 +331,7 @@ function getCurtainCombos() {
     { label: 'ม่านพับ (Dimout)', value: 'ROMAN|Dimout' },
     { label: 'ม่านพับ (Blackout)', value: 'ROMAN|Blackout' },
     { label: 'ม่านพับ (Sheer)', value: 'ROMAN|Sheer' },
-    { label: 'ม่านม้วน Blackout', value: 'ROLLER|Blackout' },
-{ label: 'ม่านม้วน 3%', value: 'ROLLER|3%' },
-{ label: 'ม่านม้วน 1%', value: 'ROLLER|1%' },
+    ...rollerCurtainData.map(r => ({ label: `${r.group} ${r.name}`, value: `ROLLER|${r.code}` })),
 { label: 'มุ้งจีบ Luxury กันยุง (ราคาลูกค้าออนไลน์)', value: 'MOSQ|LUXURY' },
 { label: 'มุ้งจีบนิรภัย (ราคาลูกค้าออนไลน์)', value: 'MOSQ|SAFE' },
 { label: 'มุ้งจีบ P-net หนาพิเศษ (ราคาลูกค้างานติดตั้ง)', value: 'MOSQ|PNET' },
@@ -628,7 +637,7 @@ secRoller.innerHTML = `
 function recalcRoller(){
 
   const combo = $(`#combo-${id}`).value;
-const type = combo.split('|')[1]; // Blackout / 3% / 1%
+const type = combo.split('|')[1]; // รหัสชนิด เช่น SUN5 / ADJ_DIMOUT / MAGIC
   const w = toNum($(`#roller-w-${id}`).value);
   const h = toNum($(`#roller-h-${id}`).value);
   const q = Math.max(1, toNum($(`#roller-q-${id}`).value, 1));
@@ -639,22 +648,10 @@ const type = combo.split('|')[1]; // Blackout / 3% / 1%
     return;
   }
 
-  // ✅ ตารางราคา (ตามชีท)
-  let pricePerSqm = 0;
-  let minPrice = 0;
-
-  if(type === "Blackout"){
-    pricePerSqm = 550;
-    minPrice = 825;
-  }
-  else if(type === "3%"){
-    pricePerSqm = 590;
-    minPrice = 885;
-  }
-  else if(type === "1%"){
-    pricePerSqm = 750;
-    minPrice = 1125;
-  }
+  // ✅ ตารางราคา (ตามชีท) — อ่านจาก priceData.json
+  const row = rollerRow(type);
+  const pricePerSqm = row ? row.price : 0;
+  const minPrice = pricePerSqm * 1.5;   // ขั้นต่ำ 1.50 ตร.ม.
 
   // ✅ สูตรชีท
   let area = w * h * 1.2;
@@ -2056,7 +2053,7 @@ if (st.roller > 0) {
 
   if (!blindsAgg[key]) {
     blindsAgg[key] = {
-      label: `ม่านม้วน ${percent}`,
+      label: rollerLabel(percent),
       entries: [],
       total: 0
     };

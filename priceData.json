@@ -580,19 +580,46 @@
   ],
   "rollerCurtainData": [
     {
-      "rollerType": "ม่านม้วน",
-      "percent": "1%",
-      "price": 750
+      "code": "SUN5",
+      "group": "ม่านม้วน",
+      "name": "ซันสกรีน 5% (Blackout&Fiber glass)",
+      "price": 599
     },
     {
-      "rollerType": "ม่านม้วน",
-      "percent": "3%",
-      "price": 590
+      "code": "SUN3",
+      "group": "ม่านม้วน",
+      "name": "ซันสกรีน 3%",
+      "price": 699
     },
     {
-      "rollerType": "ม่านม้วน",
-      "percent": "Blackout",
-      "price": 550
+      "code": "SUN1",
+      "group": "ม่านม้วน",
+      "name": "ซันสกรีน 1%",
+      "price": 799
+    },
+    {
+      "code": "ADJ_BLACKOUT_F",
+      "group": "ม่านปรับแสง",
+      "name": "Blackout รหัส F",
+      "price": 699
+    },
+    {
+      "code": "ADJ_DIMOUT",
+      "group": "ม่านปรับแสง",
+      "name": "Dimout",
+      "price": 599
+    },
+    {
+      "code": "ADJ_SUNSCREEN",
+      "group": "ม่านปรับแสง",
+      "name": "Sun Screen",
+      "price": 699
+    },
+    {
+      "code": "MAGIC",
+      "group": "ม่านม้วนสลับ",
+      "name": "Magic Screen",
+      "price": 999
     }
   ]
 }
