@@ -326,6 +326,18 @@
       "maxHeight": 3
     },
     {
+      "sheerCurtainType": "ผ้าโปร่งตาไก่",
+      "sheerFabricType": "ผ้าโปร่งตาไก่ Chaleeya",
+      "price": 449,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งตาไก่",
+      "sheerFabricType": "ผ้าโปร่งตาไก่ 90026 Champagne",
+      "price": 599,
+      "maxHeight": 2.63
+    },
+    {
       "sheerCurtainType": "ผ้าโปร่งซ่อนหู",
       "sheerFabricType": "ผ้าโปร่งซ่อนหู ลายเรียบ/ลายฝน",
       "price": 309,
@@ -360,6 +372,18 @@
       "sheerFabricType": "ผ้าโปร่งซ่อนหู อื่นๆ&Linen Pie",
       "price": 359,
       "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งซ่อนหู",
+      "sheerFabricType": "ผ้าโปร่งซ่อนหู Chaleeya",
+      "price": 449,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งซ่อนหู",
+      "sheerFabricType": "ผ้าโปร่งซ่อนหู 90026 Champagne",
+      "price": 599,
+      "maxHeight": 2.63
     },
     {
       "sheerCurtainType": "ผ้าโปร่งลอนตะขอ",
@@ -398,6 +422,18 @@
       "maxHeight": 3
     },
     {
+      "sheerCurtainType": "ผ้าโปร่งลอนตะขอ",
+      "sheerFabricType": "ผ้าโปร่งลอนตะขอ Chaleeya",
+      "price": 449,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนตะขอ",
+      "sheerFabricType": "ผ้าโปร่งลอนตะขอ 90026 Champagne",
+      "price": 599,
+      "maxHeight": 2.63
+    },
+    {
       "sheerCurtainType": "ผ้าโปร่งคอกระเช้า",
       "sheerFabricType": "ผ้าโปร่งคอกระเช้า ลายเรียบ/ลายฝน",
       "price": 309,
@@ -432,6 +468,18 @@
       "sheerFabricType": "ผ้าโปร่งคอกระเช้า อื่นๆ&Linen Pie",
       "price": 359,
       "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งคอกระเช้า",
+      "sheerFabricType": "ผ้าโปร่งคอกระเช้า Chaleeya",
+      "price": 449,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งคอกระเช้า",
+      "sheerFabricType": "ผ้าโปร่งคอกระเช้า 90026 Champagne",
+      "price": 599,
+      "maxHeight": 2.63
     },
     {
       "sheerCurtainType": "ผ้าโปร่งม่านจีบ",
@@ -470,6 +518,18 @@
       "maxHeight": 3
     },
     {
+      "sheerCurtainType": "ผ้าโปร่งม่านจีบ",
+      "sheerFabricType": "ผ้าโปร่งม่านจีบ Chaleeya",
+      "price": 899,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งม่านจีบ",
+      "sheerFabricType": "ผ้าโปร่งม่านจีบ 90026 Champagne",
+      "price": 1190,
+      "maxHeight": 2.63
+    },
+    {
       "sheerCurtainType": "ผ้าโปร่งลอนเทป",
       "sheerFabricType": "ผ้าโปร่งลอนเทป ลายเรียบ/ลายฝน",
       "price": 699,
@@ -504,6 +564,18 @@
       "sheerFabricType": "ผ้าโปร่งลอนเทป อื่นๆ&Linen Pie",
       "price": 849,
       "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนเทป",
+      "sheerFabricType": "ผ้าโปร่งลอนเทป Chaleeya",
+      "price": 1099,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนเทป",
+      "sheerFabricType": "ผ้าโปร่งลอนเทป 90026 Champagne",
+      "price": 1359,
+      "maxHeight": 2.63
     },
     {
       "sheerCurtainType": "ผ้าโปร่งม่านสอด",
@@ -542,6 +614,18 @@
       "maxHeight": 3
     },
     {
+      "sheerCurtainType": "ผ้าโปร่งม่านสอด",
+      "sheerFabricType": "ผ้าโปร่งม่านสอด Chaleeya",
+      "price": 409,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งม่านสอด",
+      "sheerFabricType": "ผ้าโปร่งม่านสอด 90026 Champagne",
+      "price": 529,
+      "maxHeight": 2.63
+    },
+    {
       "sheerCurtainType": "ผ้าโปร่งลอนโซ่",
       "sheerFabricType": "ผ้าโปร่งลอนโซ่ ลายเรียบ/ลายฝน",
       "price": 309,
@@ -576,6 +660,18 @@
       "sheerFabricType": "ผ้าโปร่งลอนโซ่ อื่นๆ&Linen Pie",
       "price": 359,
       "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนโซ่",
+      "sheerFabricType": "ผ้าโปร่งลอนโซ่ Chaleeya",
+      "price": 449,
+      "maxHeight": 3
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งลอนโซ่",
+      "sheerFabricType": "ผ้าโปร่งลอนโซ่ 90026 Champagne",
+      "price": 599,
+      "maxHeight": 2.63
     }
   ],
   "rollerCurtainData": [
