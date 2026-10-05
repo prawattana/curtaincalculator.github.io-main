@@ -23,7 +23,10 @@
 
     /* Backdrop */
     backdrop = make('div', 'csd-backdrop');
-    backdrop.addEventListener('click', closeDropdown);
+    // ปิดเมื่อกดลงและปล่อยบนพื้นหลังเท่านั้น (กดในช่องค้นหาแล้วลากออกมาปล่อย ไม่ปิด)
+    let downOnBack = false;
+    backdrop.addEventListener('pointerdown', e => { downOnBack = e.target === backdrop; });
+    backdrop.addEventListener('click', e => { if (e.target === backdrop && downOnBack) closeDropdown(); downOnBack = false; });
 
     /* Panel */
     panel = make('div', 'csd-panel');

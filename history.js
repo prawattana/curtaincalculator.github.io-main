@@ -14,6 +14,13 @@
   let currentId = null;            // ใบที่เปิดอยู่ (บันทึกซ้ำ = อัปเดตใบเดิม)
 
   const $ = (s, r) => (r || document).querySelector(s);
+  // ปิดป๊อปอัปเมื่อคลิกพื้นหลัง — ต้องกดลงและปล่อยบนพื้นหลังทั้งคู่
+  // (กดค้างในช่องชื่อแล้วลากออกไปปล่อยนอกกล่อง เบราว์เซอร์นับเป็นคลิกพื้นหลัง → ป๊อปอัปเคยเด้งปิด)
+  function onBackdrop(back, fn) {
+    let downOnBack = false;
+    back.addEventListener('pointerdown', e => { downOnBack = e.target === back });
+    back.addEventListener('click', e => { if (e.target === back && downOnBack) fn(); downOnBack = false });
+  }
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]') } catch (e) { return [] } };
   const store = (list) => { try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX))); return true } catch (e) { uiAlert('บันทึกไม่สำเร็จ — พื้นที่ในเครื่องเต็ม ลองลบประวัติเก่าออกบ้าง'); return false } };
   const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -147,7 +154,7 @@
       const done = (v) => { back.remove(); document.removeEventListener('keydown', key, true); resolve(v) };
       const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); done(false) } else if (e.key === 'Enter') { e.preventDefault(); done(true) } };
       document.addEventListener('keydown', key, true);
-      back.addEventListener('click', e => { if (e.target === back) done(false) });
+      onBackdrop(back, () => done(false));
       $('.cch-ok', back).onclick = () => done(true);
       if (cancel) $('.cch-cancel', back).onclick = () => done(false);
       setTimeout(() => $('.cch-ok', back).focus(), 30);
@@ -173,7 +180,7 @@
       </div>`;
     document.body.appendChild(back);
     const close = () => back.remove();
-    back.addEventListener('click', e => { if (e.target === back) close() });
+    onBackdrop(back, close);
     $('.cch-x', back).onclick = close;
     const listEl = $('.cch-list', back);
     const draw = () => {
@@ -247,7 +254,7 @@
       if (!name) { inp.focus(); inp.classList.add('cch-bad'); return }
       close(); onOk(name);
     };
-    back.addEventListener('click', e => { if (e.target === back) close() });
+    onBackdrop(back, close);
     $('.cch-x', back).onclick = close;
     $('.cch-cancel', back).onclick = close;
     $('.cch-ok', back).onclick = ok;
