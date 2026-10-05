@@ -218,7 +218,8 @@ body {
 }
 .card-exit { animation: cardExit var(--t-m) var(--ease-i) forwards; pointer-events:none; overflow:hidden; }
 
-.item-head { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; }
+/* padding ซ้าย-ขวา = เว้นที่ให้ปุ่ม ทำซ้ำ/ลบ มุมขวาบน (absolute) ไม่ทับช่องเลือกแบบม่าน · ใส่ 2 ข้างให้ช่องยังอยู่กลาง */
+.item-head { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; padding:0 72px; }
 .item-badge {
   font-size:11px; font-weight:600; color:var(--g3);
   background:rgba(142,142,147,0.09); border:1px solid rgba(142,142,147,0.18);

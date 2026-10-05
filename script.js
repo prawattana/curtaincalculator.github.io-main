@@ -1803,8 +1803,18 @@ function hydrateCard(id){
     // ราง
     const rails = getRailsForType(ctype);
     const rSel = $(`#rail-${id}`);
+    const prevRail = rSel.value || '';   // รางที่เลือกไว้ก่อนเปลี่ยนแบบม่าน (การ์ดใหม่ = ว่าง)
     rSel.innerHTML = rails.map(r => `<option value="${r.rail}">${r.rail}</option>`).join('');
     rSel.disabled = rails.length === 0;
+    // เคยเลือกราง 2 ชั้นไว้ในการ์ดนี้ → เปลี่ยนแบบม่านแล้วยังเป็นราง 2 ชั้นของแบบใหม่ (ไม่เด้งกลับเป็น 1 ชั้น)
+    // ลายไม้/ไม่ลายไม้ ยึดตามรางเดิม · การ์ดใหม่ยังเริ่มที่ตัวแรก (1 ชั้น) เหมือนเดิม
+    if (/2\s*ชั้น/.test(prevRail)) {
+      const two = rails.filter(r => /2\s*ชั้น/.test(r.rail));
+      const wood = /ลายไม้/.test(prevRail);
+      const pick = two.find(r => /ลายไม้/.test(r.rail) === wood) || two[0];
+      if (pick) rSel.value = pick.rail;
+    }
+    if (prevRail) setTimeout(() => rSel.dispatchEvent(new Event('change')), 0);   // คิดราคารางใหม่ตามรางของแบบม่านใหม่
 
     // ม่านทึบ
     const opaques = getOpaqueOptions(ctype);
