@@ -332,11 +332,10 @@ function getCurtainCombos() {
     { label: 'ม่านพับ (Blackout)', value: 'ROMAN|Blackout' },
     { label: 'ม่านพับ (Sheer)', value: 'ROMAN|Sheer' },
     ...rollerCurtainData.map(r => ({ label: `${r.group} ${r.name}`, value: `ROLLER|${r.code}` })),
-{ label: 'มุ้งจีบ Luxury กันยุง (ราคาลูกค้าออนไลน์)', value: 'MOSQ|LUXURY' },
-{ label: 'มุ้งจีบนิรภัย (ราคาลูกค้าออนไลน์)', value: 'MOSQ|SAFE' },
-{ label: 'มุ้งจีบ P-net หนาพิเศษ (ราคาลูกค้างานติดตั้ง)', value: 'MOSQ|PNET' },
+// 12ต.ค.69 รวมแบบ: มุ้งจีบ = Luxury + P-net เดิม · มุ้งนิรภัย = มุ้งจีบนิรภัย + มุ้งนิรภัย RG เดิม (โค้ด MOSQ|PNET / RGNET ยังอยู่ ให้ประวัติเก่าเปิดได้)
+{ label: 'มุ้งจีบ', value: 'MOSQ|LUXURY' },
+{ label: 'มุ้งนิรภัย', value: 'MOSQ|SAFE' },
 { label: 'มุ้งรังผึ้ง', value: 'HONEYCOMB' },
-{ label: 'มุ้งนิรภัย RG', value: 'RGNET' },
 { label: 'มุ้งแม่เหล็ก', value: 'MAGNET' },
 { label: 'มุ้งบานเลื่อน', value: 'FRAMENET|SLIDE' },
 { label: 'มุ้งบานสวิง', value: 'FRAMENET|SWING' },
@@ -713,6 +712,8 @@ secMosq.innerHTML = `
 
 <div class="price-box" id="mosq-price-${id}"></div>
 </div>
+
+<div class="note" id="mosq-note-${id}"></div>
 `;
 function recalcMosq(){
 
@@ -720,6 +721,10 @@ const combo = $(`#combo-${id}`).value;
 const brand = combo.split('|')[1];
 
 const type = $(`#mosq-type-${id}`).value;
+
+$(`#mosq-note-${id}`).textContent = brand==="SAFE"
+  ? '* แยกกลาง 3,200 บาท/ตร.ม. (ขั้นต่ำ 1.5 ตร.ม.) / สไลด์เดี่ยว 2,800 บาท/ตร.ม. (ขั้นต่ำ 1 ตร.ม.)'
+  : '* แยกกลาง 1,650 บาท/ตร.ม. (ขั้นต่ำ 1.5 ตร.ม.) / สไลด์เดี่ยว 1,500 บาท/ตร.ม. (ขั้นต่ำ 1 ตร.ม.)';
 
 const w = toNum($(`#mosq-w-${id}`).value);
 const h = toNum($(`#mosq-h-${id}`).value);
@@ -734,17 +739,16 @@ if(!w || !h){
 
 let price=0;
 
-if(brand==="LUXURY"){
-  price=1400;
+// มุ้งจีบ (Luxury/P-net เดิม): แยกกลาง 1,650 · สไลด์เดี่ยว 1,500
+if(brand==="LUXURY" || brand==="PNET"){
+  price = (type==="center") ? 1650 : 1500;
 }
 
 if(brand==="SAFE"){
-  price = (type==="center") ? 2500 : 1400;
+  price = (type==="center") ? 3200 : 2800;   // มุ้งนิรภัย
 }
 
-if(brand==="PNET"){
-  price=1500;
-}
+
 
 // ขั้นต่ำ 1 ตร.ม. — แยกกลางขั้นต่ำ 1.5 ตร.ม.
 const minArea = (type==="center") ? 1.5 : 1;
@@ -766,6 +770,7 @@ bindAuto($(`#mosq-w-${id}`),recalcMosq);
 bindAuto($(`#mosq-h-${id}`),recalcMosq);
 bindAuto($(`#mosq-q-${id}`),recalcMosq);
 bindAuto($(`#mosq-type-${id}`),recalcMosq);
+bindAuto($(`#combo-${id}`),recalcMosq);   // สลับ มุ้งจีบ ↔ มุ้งนิรภัย แล้วราคา/หมายเหตุเปลี่ยนตาม
 });
 
 // ===== SECTION: HONEYCOMB (มุ้งรังผึ้ง) =====
@@ -862,7 +867,7 @@ secRgnet.innerHTML = `
 <label>รูปแบบ:</label>
 <select id="rgnet-type-${id}">
 <option value="center">แยกกลาง</option>
-<option value="side">เก็บข้าง</option>
+<option value="side">สไลด์เดี่ยว</option>
 </select>
 </div>
 
@@ -880,7 +885,7 @@ secRgnet.innerHTML = `
 <div class="price-box" id="rgnet-price-${id}"></div>
 </div>
 
-<div class="note">* แยกกลาง 3,200 บาท/ตร.ม. (ขั้นต่ำ 1.5 ตร.ม.) / เก็บข้าง 2,800 บาท/ตร.ม. (ขั้นต่ำ 1 ตร.ม.)</div>
+<div class="note">* แยกกลาง 3,200 บาท/ตร.ม. (ขั้นต่ำ 1.5 ตร.ม.) / สไลด์เดี่ยว 2,800 บาท/ตร.ม. (ขั้นต่ำ 1 ตร.ม.)</div>
 `;
 
 function recalcRgnet(){
@@ -978,7 +983,7 @@ bindAuto($(`#magnet-q-${id}`),recalcMagnet);
 });
 
 // ===== SECTION: FRAME NET (มุ้งบานเลื่อน / มุ้งบานสวิง) =====
-// คิดตามเมตรรอบกรอบ: (กว้าง + สูง) x 2 x 370 บาท · ใส่มุ้งกันแมวเพิ่มชุดละ 1,000 บาท
+// คิดตามเมตรรอบกรอบ: (กว้าง + สูง) x 2 x 370 บาท · ใส่มุ้งกันแมวเพิ่มชุดละ 1,200 บาท
 const secFramenet = el('div', { className:'alt-box', id:`sec-framenet-${id}`, style:'display:none' });
 
 secFramenet.innerHTML = `
@@ -1003,7 +1008,7 @@ secFramenet.innerHTML = `
 
 <div class="form-group">
 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-<input type="checkbox" id="framenet-cat-${id}"> ใส่มุ้งกันแมว (+1,000 บาท/ชุด)
+<input type="checkbox" id="framenet-cat-${id}"> ใส่มุ้งกันแมว (+1,200 บาท/ชุด)
 </label>
 </div>
 
@@ -1025,7 +1030,7 @@ if(!w || !h){
 }
 
 const perimeter = (w + h) * 2;              // เมตรรอบกรอบ
-const total = (perimeter * 370 + (cat ? 1000 : 0)) * q;
+const total = (perimeter * 370 + (cat ? 1200 : 0)) * q;
 
 $(`#framenet-price-${id}`).textContent = fmt(total)+' บาท';
 
@@ -2090,11 +2095,10 @@ if (st.mosq > 0){
 
   let label="มุ้งจีบ";
 
-  if(brand==="LUXURY") label="มุ้งจีบ Luxury กันยุง";
-  if(brand==="SAFE") label="มุ้งจีบนิรภัย";
-  if(brand==="PNET") label="มุ้งจีบ P-net หนาพิเศษ";
+  if(brand==="LUXURY" || brand==="PNET") label="มุ้งจีบ";
+  if(brand==="SAFE") label="มุ้งนิรภัย";
 
-  const key = `MOSQ_${brand}`;
+  const key = `MOSQ_${brand==="PNET" ? "LUXURY" : brand}`;
 
   if(!blindsAgg[key]){
     blindsAgg[key]={label,entries:[],total:0};
@@ -2154,10 +2158,10 @@ if (st.rgnet > 0){
   const type = $(`#rgnet-type-${id}`)?.value || '';
   const typeText =
     type === 'center' ? 'แยกกลาง' :
-    type === 'side' ? 'เก็บข้าง' : '';
+    type === 'side' ? 'สไลด์เดี่ยว' : '';
 
   if(!blindsAgg.RGNET){
-    blindsAgg.RGNET={label:'มุ้งนิรภัย RG',entries:[],total:0};
+    blindsAgg.RGNET={label:'มุ้งนิรภัย',entries:[],total:0};
   }
 
   blindsAgg.RGNET.entries.push({

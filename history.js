@@ -72,7 +72,10 @@
     for (const c of cards) {
       const id = addItem();
       const combo = $('#combo-' + id);
-      combo.value = c.combo;
+      // แบบมุ้งที่ถูกรวมแล้ว (12ต.ค.69): P-net → มุ้งจีบ (ช่องกรอกชุดเดียวกัน) · มุ้งนิรภัย RG ช่องกรอกคนละชุด เลยเติมตัวเลือกเดิมกลับให้การ์ดเก่าเปิดได้
+      const cv = c.combo === 'MOSQ|PNET' ? 'MOSQ|LUXURY' : c.combo;
+      if (cv === 'RGNET' && ![...combo.options].some(o => o.value === cv)) combo.add(new Option('มุ้งนิรภัย', cv));
+      combo.value = cv;
       hydrateCard(id);
       fire(combo, 'change');
       await wait(30);
