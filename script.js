@@ -575,9 +575,9 @@ function addItem(){
     <div class="form-group">
       <label>ผ้าม่านพับ:</label>
       <select id="roman-fabric-${id}">
-        <option value="Dimout">Dimout (1250/ม. ขั้นต่ำ 950)</option>
-        <option value="Blackout">Blackout (1290/ม. ขั้นต่ำ 990)</option>
-        <option value="Sheer">Sheer (1200/ม. ขั้นต่ำ 900)</option>
+        <option value="Dimout">Dimout (1250/ม. ขั้นต่ำ 1 ม.)</option>
+        <option value="Blackout">Blackout (1290/ม. ขั้นต่ำ 1 ม.)</option>
+        <option value="Sheer">Sheer (1200/ม. ขั้นต่ำ 1 ม.)</option>
       </select>
     </div>
     <div class="alt-row">
@@ -595,8 +595,7 @@ function addItem(){
     const norail = $(`#roman-norail-${id}`).checked;
     if (!w) { $(`#roman-price-${id}`).textContent=''; items.get(id).roman = 0; return; }
     const rate  = (fabric==='Blackout') ? 1290 : (fabric==='Sheer' ? 1200 : 1250);
-    const floor = (fabric==='Blackout') ? 990  : (fabric==='Sheer' ? 900  : 950);
-    let perSet = Math.max(rate*w, floor);
+    let perSet = rate*Math.max(w, 1); // ขั้นต่ำ 1 ม. (24ต.ค.69)
     if (norail) perSet = Math.max(0, perSet - 150);
     const total = perSet*q;
     $(`#roman-price-${id}`).textContent = fmt(total) + ' บาท';
