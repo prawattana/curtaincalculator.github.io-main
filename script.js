@@ -454,6 +454,7 @@ function addItem(){
   // ===== SECTION: WOOD BLIND =====
   const secWood = el('div', { className:'alt-box', id:`sec-wood-${id}`, style:'display:none' });
   secWood.innerHTML = `
+    <div class="form-group"><label>ช่องทาง:</label><select id="wb-ch-${id}"><option value="platform">ราคา Shopee&TikTok</option><option value="direct">ราคาสั่งตรง</option></select></div>
     <div class="alt-row">
       <div class="form-group"><label>กว้าง (เมตร):</label><input type="number" id="wb-w-${id}" min="0" step="0.01" placeholder="เช่น 1.00"></div>
       <div class="form-group"><label>สูง (เมตร):</label><input type="number" id="wb-h-${id}" min="0" step="0.01" placeholder="เช่น 2.00"></div>
@@ -468,12 +469,14 @@ function addItem(){
     if (!w || !h) { $(`#wb-price-${id}`).textContent=''; items.get(id).wood=0; return; }
     let sqyd = w*h*1.2;           // กว้าง×สูง×1.2 = ตารางหลา
     if (sqyd < 1.50) sqyd = 1.50; // ไม่ถึง 1.50 ตรล. คิดที่ 1.50
-    let unit = sqyd*1490;          // ราคาขาย 1490
+    const direct = $(`#wb-ch-${id}`)?.value === 'direct';
+    let unit = sqyd*(direct ? 1290 : 1490); // Shopee&TikTok 1490 / สั่งตรง 1290 (7พ.ย.69)
     const total = unit*q;
     $(`#wb-price-${id}`).textContent = fmt(total) + ' บาท';
     items.get(id).wood = total;
   }
   setTimeout(() => {
+    bindAuto($(`#wb-ch-${id}`), recalcWood);
     bindAuto($(`#wb-w-${id}`), recalcWood);
     bindAuto($(`#wb-h-${id}`), recalcWood);
     bindAuto($(`#wb-q-${id}`), recalcWood);
@@ -575,27 +578,33 @@ function addItem(){
     <div class="form-group">
       <label>ผ้าม่านพับ:</label>
       <select id="roman-fabric-${id}">
-        <option value="Dimout">Dimout (1250/ม. ขั้นต่ำ 1 ม.)</option>
-        <option value="Blackout">Blackout (1290/ม. ขั้นต่ำ 1 ม.)</option>
-        <option value="Sheer">Sheer (1200/ม. ขั้นต่ำ 1 ม.)</option>
+        <option value="Dimout">Dimout กันยูวี (1250/ม. ขั้นต่ำ 1,090)</option>
+        <option value="Blackout">Blackout กันแสง100% ลินิน (1290/ม. ขั้นต่ำ 1,190)</option>
+        <option value="Sheer">โปร่ง (1200/ม. ขั้นต่ำ 990)</option>
       </select>
     </div>
+    <div class="form-group"><label>ช่องทาง:</label><select id="roman-ch-${id}"><option value="platform">ราคา Shopee&TikTok</option><option value="direct">ราคาสั่งตรง</option></select></div>
     <div class="alt-row">
       <div class="form-group"><label>กว้าง (เมตร):</label><input type="number" id="roman-w-${id}" min="0" step="0.01" placeholder="เช่น 1.00"></div>
       <div class="form-group"><label>จำนวนชุด:</label><input type="number" id="roman-q-${id}" min="1" value="1"></div>
       <div class="form-group check"><label><input type="checkbox" id="roman-norail-${id}"> ไม่รับราง (ลด 150)</label></div>
       <div class="price-box" id="roman-price-${id}"></div>
     </div>
-    <div class="note">* ความสูงไม่มีผลต่อราคา ใช้เพื่อสรุปรายการเท่านั้น</div>
   `;
   function recalcRoman(){
     const fabric = $(`#roman-fabric-${id}`).value;
     const w = toNum($(`#roman-w-${id}`).value);
     const q = Math.max(1, toNum($(`#roman-q-${id}`).value, 1));
     const norail = $(`#roman-norail-${id}`).checked;
-    if (!w) { $(`#roman-price-${id}`).textContent=''; items.get(id).roman = 0; return; }
     const rate  = (fabric==='Blackout') ? 1290 : (fabric==='Sheer' ? 1200 : 1250);
-    let perSet = rate*Math.max(w, 1); // ขั้นต่ำ 1 ม. (24ต.ค.69)
+    // ขั้นต่ำต่อชุด แยกช่องทาง (7พ.ย.69): Shopee&TikTok Dimout1090/Blackout1190/โปร่ง990 · สั่งตรง 990/1090/900
+    const direct = $(`#roman-ch-${id}`)?.value === 'direct';
+    const minP = (fabric==='Blackout') ? (direct?1090:1190) : (fabric==='Sheer' ? (direct?900:990) : (direct?990:1090));
+    const MINS = direct ? {Dimout:990,Blackout:1090,Sheer:900} : {Dimout:1090,Blackout:1190,Sheer:990};
+    const NAMES = {Dimout:'Dimout กันยูวี (1250/ม.',Blackout:'Blackout กันแสง100% ลินิน (1290/ม.',Sheer:'โปร่ง (1200/ม.'};
+    $(`#roman-fabric-${id}`).querySelectorAll('option').forEach(o => { o.textContent = `${NAMES[o.value]} ขั้นต่ำ ${fmt(MINS[o.value])})`; });
+    if (!w) { $(`#roman-price-${id}`).textContent=''; items.get(id).roman = 0; return; }
+    let perSet = Math.max(rate*w, minP);
     if (norail) perSet = Math.max(0, perSet - 150);
     const total = perSet*q;
     $(`#roman-price-${id}`).textContent = fmt(total) + ' บาท';
@@ -603,6 +612,7 @@ function addItem(){
   }
   setTimeout(() => {
     bindAuto($(`#roman-fabric-${id}`), recalcRoman);
+    bindAuto($(`#roman-ch-${id}`),     recalcRoman);
     bindAuto($(`#roman-w-${id}`),      recalcRoman);
     bindAuto($(`#roman-q-${id}`),      recalcRoman);
     bindAuto($(`#roman-norail-${id}`), recalcRoman);
@@ -630,6 +640,17 @@ secRoller.innerHTML = `
 
 <div class="price-box" id="roller-price-${id}"></div>
 </div>
+<div class="alt-row">
+<div class="form-group">
+<label>รางไกด์ข้าง (288/ม.):</label>
+<select id="roller-gside-${id}"><option value="0">ไม่ใส่</option><option value="1">1 ฝั่ง</option><option value="2">2 ฝั่ง (ซ้าย/ขวา)</option></select>
+</div>
+<div class="form-group">
+<label>รางไกด์กลาง (540/ม.) ชิ้น:</label>
+<input type="number" id="roller-gmid-${id}" min="0" value="0">
+</div>
+</div>
+<div class="note">* รางไกด์คิดตามความสูง · ไกด์กลางใช้เมื่อม่านม้วน 2 อันติดชิดกัน (คิดชิ้นเดียวตรงกลาง)</div>
 `;
 
 function recalcRoller(){
@@ -643,6 +664,7 @@ const type = combo.split('|')[1]; // รหัสชนิด เช่น SUN5 
   if (!w || !h){
     $(`#roller-price-${id}`).textContent = '';
     items.get(id).roller = 0;
+    items.get(id).rollerGuide = '';
     return;
   }
 
@@ -666,7 +688,17 @@ const type = combo.split('|')[1]; // รหัสชนิด เช่น SUN5 
     unitPrice = minPrice;
   }
 
-  const total = unitPrice * q;
+  // รางไกด์ (7พ.ย.69): ข้าง 288/ม. × สูง × ฝั่ง × ชุด · กลาง 540/ม. × สูง × ชิ้น
+  const gSide = toNum($(`#roller-gside-${id}`)?.value, 0);
+  const gMid  = Math.max(0, toNum($(`#roller-gmid-${id}`)?.value, 0));
+  const sideAmt = 288 * h * gSide * q;
+  const midAmt  = 540 * h * gMid;
+  const gParts = [];
+  if (sideAmt > 0) gParts.push(`ไกด์ข้าง ${gSide} ฝั่ง${q>1?` × ${q} ชุด`:''} ${fmt(sideAmt)}`);
+  if (midAmt > 0)  gParts.push(`ไกด์กลาง ${gMid} ชิ้น ${fmt(midAmt)}`);
+  items.get(id).rollerGuide = gParts.length ? ` (รวม${gParts.join(' + ')})` : '';
+
+  const total = unitPrice * q + sideAmt + midAmt;
 
   $(`#roller-price-${id}`).textContent = fmt(total) + ' บาท';
 
@@ -678,6 +710,8 @@ setTimeout(()=>{
 bindAuto($(`#roller-w-${id}`),recalcRoller);
 bindAuto($(`#roller-h-${id}`),recalcRoller);
 bindAuto($(`#roller-q-${id}`),recalcRoller);
+bindAuto($(`#roller-gside-${id}`),recalcRoller);
+bindAuto($(`#roller-gmid-${id}`),recalcRoller);
 bindAuto($(`#combo-${id}`), recalcRoller);
 });
 
@@ -2074,7 +2108,7 @@ if (st.roller > 0) {
   }
   blindsAgg[key].entries.push({
     id,
-    line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท`,
+    line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท${st.rollerGuide || ''}`,
     amt: Math.round(st.roller)
   });
 
@@ -2632,6 +2666,7 @@ function duplicateItem(srcId){
   const aluModel    = $(`#alu-model-${srcId}`)?.value || null;
   const romanFabric = $(`#roman-fabric-${srcId}`)?.value || null;
   const valanceType = $(`#valance-type-${srcId}`)?.value || null;
+  const chVals = ['wb-ch','roman-ch'].map(k => [k, $(`#${k}-${srcId}`)?.value]);
 
   const newId = addItem();
   $(`#combo-${newId}`).value = comboVal;
@@ -2658,6 +2693,7 @@ function duplicateItem(srcId){
       $(`#roman-fabric-${newId}`).value = romanFabric;
       $(`#roman-fabric-${newId}`).dispatchEvent(new Event('change'));
     }
+    chVals.forEach(([k,v]) => { const e = $(`#${k}-${newId}`); if (v && e) { e.value = v; e.dispatchEvent(new Event('change')); } });
     if (valanceType && $(`#valance-type-${newId}`)) {
       $(`#valance-type-${newId}`).value = valanceType;
       $(`#valance-type-${newId}`).dispatchEvent(new Event('change'));
