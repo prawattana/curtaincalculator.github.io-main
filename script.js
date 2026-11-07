@@ -640,6 +640,17 @@ secRoller.innerHTML = `
 
 <div class="price-box" id="roller-price-${id}"></div>
 </div>
+<div class="alt-row">
+<div class="form-group">
+<label>รางไกด์ข้าง (288/ม.):</label>
+<select id="roller-gside-${id}"><option value="0">ไม่ใส่</option><option value="1">1 ฝั่ง</option><option value="2">2 ฝั่ง (ซ้าย/ขวา)</option></select>
+</div>
+<div class="form-group">
+<label>รางไกด์กลาง (540/ม.) ชิ้น:</label>
+<input type="number" id="roller-gmid-${id}" min="0" value="0">
+</div>
+</div>
+<div class="note">* รางไกด์คิดตามความสูง · ไกด์กลางใช้เมื่อม่านม้วน 2 อันติดชิดกัน (คิดชิ้นเดียวตรงกลาง)</div>
 `;
 
 function recalcRoller(){
@@ -653,6 +664,7 @@ const type = combo.split('|')[1]; // รหัสชนิด เช่น SUN5 
   if (!w || !h){
     $(`#roller-price-${id}`).textContent = '';
     items.get(id).roller = 0;
+    items.get(id).rollerGuide = '';
     return;
   }
 
@@ -676,7 +688,17 @@ const type = combo.split('|')[1]; // รหัสชนิด เช่น SUN5 
     unitPrice = minPrice;
   }
 
-  const total = unitPrice * q;
+  // รางไกด์ (7พ.ย.69): ข้าง 288/ม. × สูง × ฝั่ง × ชุด · กลาง 540/ม. × สูง × ชิ้น
+  const gSide = toNum($(`#roller-gside-${id}`)?.value, 0);
+  const gMid  = Math.max(0, toNum($(`#roller-gmid-${id}`)?.value, 0));
+  const sideAmt = 288 * h * gSide * q;
+  const midAmt  = 540 * h * gMid;
+  const gParts = [];
+  if (sideAmt > 0) gParts.push(`ไกด์ข้าง ${gSide} ฝั่ง${q>1?` × ${q} ชุด`:''} ${fmt(sideAmt)}`);
+  if (midAmt > 0)  gParts.push(`ไกด์กลาง ${gMid} ชิ้น ${fmt(midAmt)}`);
+  items.get(id).rollerGuide = gParts.length ? ` (รวม${gParts.join(' + ')})` : '';
+
+  const total = unitPrice * q + sideAmt + midAmt;
 
   $(`#roller-price-${id}`).textContent = fmt(total) + ' บาท';
 
@@ -688,6 +710,8 @@ setTimeout(()=>{
 bindAuto($(`#roller-w-${id}`),recalcRoller);
 bindAuto($(`#roller-h-${id}`),recalcRoller);
 bindAuto($(`#roller-q-${id}`),recalcRoller);
+bindAuto($(`#roller-gside-${id}`),recalcRoller);
+bindAuto($(`#roller-gmid-${id}`),recalcRoller);
 bindAuto($(`#combo-${id}`), recalcRoller);
 });
 
@@ -2084,7 +2108,7 @@ if (st.roller > 0) {
   }
   blindsAgg[key].entries.push({
     id,
-    line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท`,
+    line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท${st.rollerGuide || ''}`,
     amt: Math.round(st.roller)
   });
 
