@@ -46,6 +46,11 @@
       "price": 780
     },
     {
+      "railType": "รางลอนเทป",
+      "rail": "ราง2ชั้น จีบ+ลอนเทป",
+      "price": 610
+    },
+    {
       "railType": "รางลอนโซ่",
       "rail": "รางลอนโซ่1ชั้น",
       "price": 280
@@ -58,22 +63,22 @@
     {
       "railType": "รางจีบดัดได้",
       "rail": "รางจีบ1ชั้นดัดได้",
-      "price": 220
+      "price": 290
     },
     {
       "railType": "รางจีบดัดได้",
       "rail": "รางจีบ2ชั้นดัดได้",
-      "price": 440
+      "price": 580
     },
     {
       "railType": "รางลอนเทปดัดได้",
       "rail": "รางsnake1ชั้นดัดได้",
-      "price": 480
+      "price": 440
     },
     {
       "railType": "รางลอนเทปดัดได้",
       "rail": "รางsnake2ชั้นดัดได้",
-      "price": 960
+      "price": 880
     }
   ],
   "curtainData": [
@@ -104,8 +109,18 @@
     },
     {
       "curtainType": "ม่านตาไก่ สูงพิเศษ",
+      "fabricType": "ม่านตาไก่ Dimout สูงพิเศษ (มีสต็อก)",
+      "price": 409
+    },
+    {
+      "curtainType": "ม่านตาไก่ สูงพิเศษ",
       "fabricType": "ม่านตาไก่ Blackout สูงพิเศษ",
       "price": 599
+    },
+    {
+      "curtainType": "ม่านตาไก่ สูงพิเศษ",
+      "fabricType": "ม่านตาไก่ Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 509
     },
     {
       "curtainType": "ม่านซ่อนหู",
@@ -129,8 +144,18 @@
     },
     {
       "curtainType": "ม่านซ่อนหู สูงพิเศษ",
+      "fabricType": "ม่านซ่อนหู Dimout สูงพิเศษ (มีสต็อก)",
+      "price": 409
+    },
+    {
+      "curtainType": "ม่านซ่อนหู สูงพิเศษ",
       "fabricType": "ม่านซ่อนหู Blackout สูงพิเศษ",
       "price": 599
+    },
+    {
+      "curtainType": "ม่านซ่อนหู สูงพิเศษ",
+      "fabricType": "ม่านซ่อนหู Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 509
     },
     {
       "curtainType": "ม่านลอนตะขอ",
@@ -154,8 +179,18 @@
     },
     {
       "curtainType": "ม่านลอนตะขอ สูงพิเศษ",
+      "fabricType": "ม่านลอนตะขอ Dimout สูงพิเศษ (มีสต็อก)",
+      "price": 409
+    },
+    {
+      "curtainType": "ม่านลอนตะขอ สูงพิเศษ",
       "fabricType": "ม่านลอนตะขอ Blackout สูงพิเศษ",
       "price": 599
+    },
+    {
+      "curtainType": "ม่านลอนตะขอ สูงพิเศษ",
+      "fabricType": "ม่านลอนตะขอ Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 509
     },
     {
       "curtainType": "ม่านคอกระเช้า",
@@ -179,8 +214,18 @@
     },
     {
       "curtainType": "ม่านคอกระเช้า สูงพิเศษ",
+      "fabricType": "ม่านคอกระเช้า Dimout สูงพิเศษ (มีสต็อก)",
+      "price": 409
+    },
+    {
+      "curtainType": "ม่านคอกระเช้า สูงพิเศษ",
       "fabricType": "ม่านคอกระเช้า Blackout สูงพิเศษ",
       "price": 599
+    },
+    {
+      "curtainType": "ม่านคอกระเช้า สูงพิเศษ",
+      "fabricType": "ม่านคอกระเช้า Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 509
     },
     {
       "curtainType": "ม่านจีบ",
@@ -195,7 +240,7 @@
     {
       "curtainType": "ม่านจีบ",
       "fabricType": "ม่านจีบ ลินิน",
-      "price": 998
+      "price": 1029
     },
     {
       "curtainType": "ม่านจีบ สูงพิเศษ",
@@ -206,6 +251,11 @@
       "curtainType": "ม่านจีบ สูงพิเศษ",
       "fabricType": "ม่านจีบ Blackout สูงพิเศษ",
       "price": 1190
+    },
+    {
+      "curtainType": "ม่านจีบ สูงพิเศษ",
+      "fabricType": "ม่านจีบ Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 1029
     },
     {
       "curtainType": "ม่านลอนเทป",
@@ -220,7 +270,7 @@
     {
       "curtainType": "ม่านลอนเทป",
       "fabricType": "ม่านลอนเทป ลินิน",
-      "price": 1190
+      "price": 1199
     },
     {
       "curtainType": "ม่านลอนเทป สูงพิเศษ",
@@ -231,6 +281,11 @@
       "curtainType": "ม่านลอนเทป สูงพิเศษ",
       "fabricType": "ม่านลอนเทป Blackout สูงพิเศษ",
       "price": 1359
+    },
+    {
+      "curtainType": "ม่านลอนเทป สูงพิเศษ",
+      "fabricType": "ม่านลอนเทป Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 1199
     },
     {
       "curtainType": "ม่านสอด",
@@ -258,6 +313,11 @@
       "price": 529
     },
     {
+      "curtainType": "ม่านสอด สูงพิเศษ",
+      "fabricType": "ม่านสอด Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 479
+    },
+    {
       "curtainType": "ม่านลอนโซ่",
       "fabricType": "ม่านลอนโซ่ Dimout",
       "price": 409
@@ -279,8 +339,18 @@
     },
     {
       "curtainType": "ม่านลอนโซ่ สูงพิเศษ",
+      "fabricType": "ม่านลอนโซ่ Dimout สูงพิเศษ (มีสต็อก)",
+      "price": 409
+    },
+    {
+      "curtainType": "ม่านลอนโซ่ สูงพิเศษ",
       "fabricType": "ม่านลอนโซ่ Blackout สูงพิเศษ",
       "price": 599
+    },
+    {
+      "curtainType": "ม่านลอนโซ่ สูงพิเศษ",
+      "fabricType": "ม่านลอนโซ่ Blackout HB&SHB (สูงไม่เกิน 3.20)",
+      "price": 509
     }
   ],
   "sheerCurtainData": [
@@ -581,7 +651,13 @@
       "sheerCurtainType": "ผ้าโปร่งม่านสอด",
       "sheerFabricType": "ผ้าโปร่งม่านสอด ลายเรียบ/ลายฝน",
       "price": 259,
-      "maxHeight": 2.7
+      "maxHeight": 2.63
+    },
+    {
+      "sheerCurtainType": "ผ้าโปร่งม่านสอด",
+      "sheerFabricType": "ผ้าโปร่งม่านสอด ลายลูกค้าเลือกเอง",
+      "price": 279,
+      "maxHeight": 2.63
     },
     {
       "sheerCurtainType": "ผ้าโปร่งม่านสอด",
@@ -703,13 +779,13 @@
       "code": "ADJ_DIMOUT",
       "group": "ม่านปรับแสง",
       "name": "Dimout",
-      "price": 599
+      "price": 699
     },
     {
       "code": "ADJ_SUNSCREEN",
       "group": "ม่านปรับแสง",
       "name": "Sun Screen",
-      "price": 699
+      "price": 899
     },
     {
       "code": "MAGIC",

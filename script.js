@@ -191,9 +191,14 @@ function getFabricYardPrice(ftype, fabricWidth){
 if(ftype.includes("Chaleeya")) return 150;
 if(ftype.includes("Champagne")) return 230;
 
-// sheer — รู้หน้าผ้าแล้วให้ยึดหน้าผ้าเป็นหลัก
+// ลินิน = 180 (ตามชีท)
+if(ftype.includes("ลินิน")) return 180;
+
+// sheer ตามชีท: richy+mid (+รุ่นเล่มจิงๆ) 80 · อื่นๆ/Linen Pie 90 · เรียบ/ลายฝน สูงพิเศษ (หน้า 3.20) 70 · เรียบ/ลายฝน สูงปกติ 60
+if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Richy") || ftype.includes("เล่มจิง"))) return 80;
+if(ftype.includes("โปร่ง") && (ftype.includes("Linen Pie") || ftype.includes("อื่นๆ"))) return 90;
 if(ftype.includes("โปร่ง") && fabricWidth){
-return Number(fabricWidth) >= 3.2 ? 90 : 60;
+return Number(fabricWidth) >= 3.2 ? 70 : 60;
 }
 
 // blackout
@@ -206,8 +211,8 @@ if(ftype.includes("Dimout")) return 130;
 
 // sheer — เผื่อกรณีไม่รู้หน้าผ้า (ผ้าหน้า 3.20 = 90 บาท)
 if(ftype.includes("โปร่งหนาพิเศษ")) return 90;
-if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 90;
-if(ftype.includes("โปร่ง") && (ftype.includes("Mid-modern") || ftype.includes("Linen Pie") || ftype.includes("เล่มจิง"))) return 90;
+if(ftype.includes("โปร่ง") && ftype.includes("สูงพิเศษ")) return 70;
+if(ftype.includes("โปร่ง") && (ftype.includes("เรียบขาวนวล") || ftype.includes("ลายฝน")) && !ftype.includes("ลายเรียบ/ลายฝน")) return 70;
 if(ftype.includes("โปร่ง")) return 60;
 
 return 130;
