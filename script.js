@@ -186,6 +186,11 @@ return totalCost * profit * qty;
 // (ผ้าโปร่งหน้า 3.20 คือ เรียบขาวนวล / ลายฝน / Mid-modern&Richy / อื่นๆ&Linen Pie)
 function getFabricYardPrice(ftype, fabricWidth){
 
+// ผ้าโปร่งเกรดพิเศษ — ราคาต่อหลาไม่ขึ้นกับหน้าผ้า
+// Chaleeya = เท่า Dimout สูงพิเศษ · 90026 Champagne = เท่า Blackout สูงพิเศษ
+if(ftype.includes("Chaleeya")) return 150;
+if(ftype.includes("Champagne")) return 230;
+
 // sheer — รู้หน้าผ้าแล้วให้ยึดหน้าผ้าเป็นหลัก
 if(ftype.includes("โปร่ง") && fabricWidth){
 return Number(fabricWidth) >= 3.2 ? 90 : 60;
