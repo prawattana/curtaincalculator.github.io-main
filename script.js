@@ -108,11 +108,11 @@ limit = 2.63;
 }
 
 if(fabricWidth==3.2){
-limit = 3.0;
+limit = type.includes("ม่านลอนเทป") ? 3.1 : 3.03;
 }
 
 if(fabricWidth==1.4){
-limit = 1.4;
+limit = type.includes("ม่านลอนเทป") ? 1.3 : 1.23;
 }
 
 return realWidth<=limit ? "ขวางผ้า" : "ต่อผ้า";
@@ -217,6 +217,17 @@ if(ftype.includes("โปร่ง")) return 60;
 
 return 130;
 
+}
+
+// ข้อความหลังหน้าผ้า "สูงเกินหน้าผ้า" (โชว์ทั้งในช่องและป๊อปอัป) — ต้องตรงกับ limit ใน calcFabricMode · ลอนเทปสูงได้มากกว่าแบบอื่น
+const FABRIC_WIDTH_DESC = {
+  tape:  { '1.4': '(สูงม่านไม่เกิน1.3)',  '2.8': '(สูงม่านไม่เกิน2.7)',  '3.2': '(สูงม่านไม่เกิน3.1)' },
+  other: { '1.4': '(สูงม่านไม่เกิน1.23)', '2.8': '(สูงม่านไม่เกิน2.63)', '3.2': '(สูงม่านไม่เกิน3.03)' },
+};
+function setFabricWidthDescs(sel, curtainType){
+  if(!sel) return;
+  const map = /ลอนเทป/.test(curtainType || '') ? FABRIC_WIDTH_DESC.tape : FABRIC_WIDTH_DESC.other;
+  sel.querySelectorAll('option').forEach(o => { o.textContent = `${o.value} ${map[o.value] || ''}`.trim(); });
 }
 
 function getDefaultFabricWidth(ftype){
@@ -1293,7 +1304,7 @@ style:'display:none;margin-left:6px;'
 });
 
 fabricSel.innerHTML=`
-<select id="fabricWidthOpaque-${id}" style="width:70px">
+<select id="fabricWidthOpaque-${id}" style="width:auto">
 <option value="1.4">1.4</option>
 <option value="2.8">2.8</option>
 <option value="3.2">3.2</option>
@@ -1311,6 +1322,7 @@ if(chk){
 chk.addEventListener('change',()=>{
 
 box.style.display = chk.checked ? 'inline-block' : 'none';
+setFabricWidthDescs(box.querySelector('select'), $(`#combo-${id}`).value);
 
 if(chk.checked){
 
@@ -1368,6 +1380,7 @@ if(lastOpaqueType !== ftype){
   lastOpaqueType = ftype;
 }
 
+setFabricWidthDescs($(`#fabricWidthOpaque-${id}`), $(`#combo-${id}`).value);
 const fabricWidth = parseFloat($(`#fabricWidthOpaque-${id}`).value);
 
 // เช็คขวางผ้าหรือ ต่อผ้า
@@ -1450,7 +1463,7 @@ style:'display:none;margin-left:6px;'
 });
 
 fabricSel.innerHTML=`
-<select id="fabricWidthSheer-${id}" style="width:70px">
+<select id="fabricWidthSheer-${id}" style="width:auto">
 <option value="1.4">1.4</option>
 <option value="2.8">2.8</option>
 <option value="3.2">3.2</option>
@@ -1468,6 +1481,7 @@ if(chk){
 chk.addEventListener('change',()=>{
 
 box.style.display = chk.checked ? 'inline-block' : 'none';
+setFabricWidthDescs(box.querySelector('select'), $(`#combo-${id}`).value);
 
 if(chk.checked){
 
@@ -1524,6 +1538,7 @@ if(lastSheerType !== type){
   lastSheerType = type;
 }
 
+setFabricWidthDescs($(`#fabricWidthSheer-${id}`), $(`#combo-${id}`).value);
 const fabricWidth = parseFloat($(`#fabricWidthSheer-${id}`).value);
 
 // เช็คขวางผ้า / ต่อผ้า — ใช้ชนิดม่านจริงๆ ไม่ใช่ ม่านตาไก่
