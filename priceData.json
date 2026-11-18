@@ -118,11 +118,6 @@
       "price": 599
     },
     {
-      "curtainType": "ม่านตาไก่ สูงพิเศษ",
-      "fabricType": "ม่านตาไก่ Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 509
-    },
-    {
       "curtainType": "ม่านซ่อนหู",
       "fabricType": "ม่านซ่อนหู Dimout",
       "price": 409
@@ -151,11 +146,6 @@
       "curtainType": "ม่านซ่อนหู สูงพิเศษ",
       "fabricType": "ม่านซ่อนหู Blackout สูงพิเศษ",
       "price": 599
-    },
-    {
-      "curtainType": "ม่านซ่อนหู สูงพิเศษ",
-      "fabricType": "ม่านซ่อนหู Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 509
     },
     {
       "curtainType": "ม่านลอนตะขอ",
@@ -188,11 +178,6 @@
       "price": 599
     },
     {
-      "curtainType": "ม่านลอนตะขอ สูงพิเศษ",
-      "fabricType": "ม่านลอนตะขอ Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 509
-    },
-    {
       "curtainType": "ม่านคอกระเช้า",
       "fabricType": "ม่านคอกระเช้า Dimout",
       "price": 409
@@ -223,11 +208,6 @@
       "price": 599
     },
     {
-      "curtainType": "ม่านคอกระเช้า สูงพิเศษ",
-      "fabricType": "ม่านคอกระเช้า Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 509
-    },
-    {
       "curtainType": "ม่านจีบ",
       "fabricType": "ม่านจีบ Dimout",
       "price": 829
@@ -251,11 +231,6 @@
       "curtainType": "ม่านจีบ สูงพิเศษ",
       "fabricType": "ม่านจีบ Blackout สูงพิเศษ",
       "price": 1190
-    },
-    {
-      "curtainType": "ม่านจีบ สูงพิเศษ",
-      "fabricType": "ม่านจีบ Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 1029
     },
     {
       "curtainType": "ม่านลอนเทป",
@@ -283,11 +258,6 @@
       "price": 1359
     },
     {
-      "curtainType": "ม่านลอนเทป สูงพิเศษ",
-      "fabricType": "ม่านลอนเทป Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 1199
-    },
-    {
       "curtainType": "ม่านสอด",
       "fabricType": "ม่านสอด Dimout",
       "price": 359
@@ -311,11 +281,6 @@
       "curtainType": "ม่านสอด สูงพิเศษ",
       "fabricType": "ม่านสอด Blackout สูงพิเศษ",
       "price": 529
-    },
-    {
-      "curtainType": "ม่านสอด สูงพิเศษ",
-      "fabricType": "ม่านสอด Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 479
     },
     {
       "curtainType": "ม่านลอนโซ่",
@@ -346,11 +311,6 @@
       "curtainType": "ม่านลอนโซ่ สูงพิเศษ",
       "fabricType": "ม่านลอนโซ่ Blackout สูงพิเศษ",
       "price": 599
-    },
-    {
-      "curtainType": "ม่านลอนโซ่ สูงพิเศษ",
-      "fabricType": "ม่านลอนโซ่ Blackout HB&SHB (สูงไม่เกิน 3.20)",
-      "price": 509
     }
   ],
   "sheerCurtainData": [
