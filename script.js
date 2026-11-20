@@ -480,6 +480,7 @@ function addItem(){
       <div class="form-group"><label>กว้าง (เมตร):</label><input type="number" id="wb-w-${id}" min="0" step="0.01" placeholder="เช่น 1.00"></div>
       <div class="form-group"><label>สูง (เมตร):</label><input type="number" id="wb-h-${id}" min="0" step="0.01" placeholder="เช่น 2.00"></div>
       <div class="form-group"><label>จำนวนชุด:</label><input type="number" id="wb-q-${id}" min="1" value="1"></div>
+      <div class="form-group check"><label><input type="checkbox" id="wb-valance-${id}" checked> รับบังราง</label></div>
       <div class="price-box" id="wb-price-${id}"></div>
     </div>
   `;
@@ -498,6 +499,7 @@ function addItem(){
   }
   setTimeout(() => {
     bindAuto($(`#wb-ch-${id}`), recalcWood);
+    bindAuto($(`#wb-valance-${id}`), recalcWood);
     bindAuto($(`#wb-w-${id}`), recalcWood);
     bindAuto($(`#wb-h-${id}`), recalcWood);
     bindAuto($(`#wb-q-${id}`), recalcWood);
@@ -529,6 +531,7 @@ function addItem(){
       <div class="form-group"><label>กว้าง (เมตร):</label><input type="number" id="alu-w-${id}" min="0" step="0.01" placeholder="เช่น 1.20"></div>
       <div class="form-group"><label>สูง (เมตร):</label><input type="number" id="alu-h-${id}" min="0" step="0.01" placeholder="เช่น 1.20"></div>
       <div class="form-group"><label>จำนวนชุด:</label><input type="number" id="alu-q-${id}" min="1" value="1"></div>
+      <div class="form-group check"><label><input type="checkbox" id="alu-valance-${id}" checked> รับบังราง</label></div>
       <div class="price-box" id="alu-price-${id}"></div>
     </div>
     <div class="note">* ขนาดต้องตรงกับช่วงในตารางราคา</div>
@@ -591,6 +594,7 @@ function addItem(){
     bindAuto($(`#alu-w-${id}`),      recalcAlu);
     bindAuto($(`#alu-h-${id}`),      recalcAlu);
     bindAuto($(`#alu-q-${id}`),      recalcAlu);
+    bindAuto($(`#alu-valance-${id}`), recalcAlu);
   });
 
   // ===== SECTION: ROMAN (ม่านพับ) =====
@@ -659,6 +663,7 @@ secRoller.innerHTML = `
 <input type="number" id="roller-q-${id}" value="1">
 </div>
 
+<div class="form-group check"><label><input type="checkbox" id="roller-valance-${id}" checked> รับบังราง</label></div>
 <div class="price-box" id="roller-price-${id}"></div>
 </div>
 <div class="alt-row">
@@ -731,6 +736,7 @@ setTimeout(()=>{
 bindAuto($(`#roller-w-${id}`),recalcRoller);
 bindAuto($(`#roller-h-${id}`),recalcRoller);
 bindAuto($(`#roller-q-${id}`),recalcRoller);
+bindAuto($(`#roller-valance-${id}`),recalcRoller);
 bindAuto($(`#roller-gside-${id}`),recalcRoller);
 bindAuto($(`#roller-gmid-${id}`),recalcRoller);
 bindAuto($(`#combo-${id}`), recalcRoller);
@@ -1813,7 +1819,11 @@ function attachHeightButtonWave(id) {
 
   wrap.append(
     makeBtn('ติดเพดาน', 0.055),
-    makeBtn('ติดเพดาน(ใช้ลิ้นราง)', 0.045)
+    makeBtn('ติดเพดาน(ใช้ลิ้นราง)', 0.045),
+    makeBtn('ติดผนัง·ชิดพื้น', 0.055),
+    makeBtn('ติดผนัง·ห่างพื้น', 0.06),
+    makeBtn('ติดฝ้า·ชิดพื้น', 0.045),
+    makeBtn('ติดฝ้า·ห่างพื้น', 0.05)
   );
 
   hEl.insertAdjacentElement('afterend', wrap);
@@ -2081,7 +2091,7 @@ hasSheer = true;
       const w = fmtSize(toNum($(`#wb-w-${id}`)?.value), $(`#wb-w-${id}`));
       const h = fmtSize(toNum($(`#wb-h-${id}`)?.value), $(`#wb-h-${id}`));
       const q = Math.max(1, toNum($(`#wb-q-${id}`)?.value, 1));
-      blindsAgg.WOOD.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.wood)} บาท`, amt: Math.round(st.wood) });
+      blindsAgg.WOOD.entries.push({ id, noVal: $(`#wb-valance-${id}`)?.checked === false, line: `${w}*${h} = ${q} ชุด ${fmt(st.wood)} บาท`, amt: Math.round(st.wood) });
       blindsAgg.WOOD.total += st.wood;
     }
     // 5) มู่ลี่อลูมิเนียม → กรู๊ป
@@ -2089,14 +2099,14 @@ hasSheer = true;
       const w = fmtSize(toNum($(`#alu-w-${id}`)?.value), $(`#alu-w-${id}`));
       const h = fmtSize(toNum($(`#alu-h-${id}`)?.value), $(`#alu-h-${id}`));
       const q = Math.max(1, toNum($(`#alu-q-${id}`)?.value, 1));
-      blindsAgg.KDN.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kdn)} บาท`, amt: Math.round(st.kdn) });
+      blindsAgg.KDN.entries.push({ id, noVal: $(`#alu-valance-${id}`)?.checked === false, line: `${w}*${h} = ${q} ชุด ${fmt(st.kdn)} บาท`, amt: Math.round(st.kdn) });
       blindsAgg.KDN.total += st.kdn;
     }
     if (st.kacee > 0) {
       const w = fmtSize(toNum($(`#alu-w-${id}`)?.value), $(`#alu-w-${id}`));
       const h = fmtSize(toNum($(`#alu-h-${id}`)?.value), $(`#alu-h-${id}`));
       const q = Math.max(1, toNum($(`#alu-q-${id}`)?.value, 1));
-      blindsAgg.KACEE.entries.push({ id, line: `${w}*${h} = ${q} ชุด ${fmt(st.kacee)} บาท`, amt: Math.round(st.kacee) });
+      blindsAgg.KACEE.entries.push({ id, noVal: $(`#alu-valance-${id}`)?.checked === false, line: `${w}*${h} = ${q} ชุด ${fmt(st.kacee)} บาท`, amt: Math.round(st.kacee) });
       blindsAgg.KACEE.total += st.kacee;
     }
 
@@ -2133,6 +2143,7 @@ if (st.roller > 0) {
   }
   blindsAgg[key].entries.push({
     id,
+    noVal: $(`#roller-valance-${id}`)?.checked === false,
     line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท${st.rollerGuide || ''}`,
     amt: Math.round(st.roller)
   });
@@ -2423,19 +2434,19 @@ if(st.hookRing > 0){
     const woodHere = blindsAgg.WOOD.entries.filter(e => e.id === id);
 
 if (!multiWood && woodHere.length === 1 && !cs.hasOpaque && !cs.hasSheer && !cs.hasRail) {
-  cardOut += `มู่ลี่ไม้\n${woodHere[0].line}\n`;
+  cardOut += `มู่ลี่ไม้${woodHere[0].noVal ? ' (ไม่รับบังราง)' : ''}\n${woodHere[0].line}\n`;
   cardTotal += woodHere[0].amt;
   blockCount++;
 }
     const kdnHere   = blindsAgg.KDN.entries.filter(e => e.id === id);
     if (!multiKDN && kdnHere.length === 1) {
-      cardOut += `มู่ลี่อลูมิเนียม STE\n${kdnHere[0].line}\n`;
+      cardOut += `มู่ลี่อลูมิเนียม STE${kdnHere[0].noVal ? ' (ไม่รับบังราง)' : ''}\n${kdnHere[0].line}\n`;
       cardTotal += kdnHere[0].amt;
       blockCount++;
     }
     const kaceeHere = blindsAgg.KACEE.entries.filter(e => e.id === id);
     if (!multiKACEE && kaceeHere.length === 1) {
-      cardOut += `มู่ลี่อลูมิเนียม KC\n${kaceeHere[0].line}\n`;
+      cardOut += `มู่ลี่อลูมิเนียม KC${kaceeHere[0].noVal ? ' (ไม่รับบังราง)' : ''}\n${kaceeHere[0].line}\n`;
       cardTotal += kaceeHere[0].amt;
       blockCount++;
     }
@@ -2461,7 +2472,7 @@ for (const k of rollerKeys) {
 
   if (!rollerMultiMap[k] && here.length === 1) {
 
-    cardOut += `${blindsAgg[k].label}\n${here[0].line}\n`;
+    cardOut += `${blindsAgg[k].label}${here[0].noVal ? ' (ไม่รับบังราง)' : ''}\n${here[0].line}\n`;
     cardTotal += here[0].amt;
     blockCount++;
 
@@ -2587,10 +2598,12 @@ if (blindsAgg.VALANCE) {
   // ต้องมีมากกว่า 1 รายการ ถึงจะรวม
   if (group.entries.length < 2) return false;
 
-  const body = group.entries.map(e => e.line).join('\n');
+  // มู่ลี่ไม้: ไม่รับบังรางทุกชุด → วงเล็บที่หัว / บางชุด → ท้ายบรรทัดชุดนั้น
+  const allNoVal = group.entries.every(e => e.noVal);
+  const body = group.entries.map(e => e.line + (e.noVal && !allNoVal ? ' (ไม่รับบังราง)' : '')).join('\n');
 
   output += (output ? '\n\n' : '') +
-    group.label + '\n' +
+    group.label + (allNoVal ? ' (ไม่รับบังราง)' : '') + '\n' +
     body +
     `\nรวม ${fmt(group.total)} บาท`;
 
