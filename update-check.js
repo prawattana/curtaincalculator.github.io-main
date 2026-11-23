@@ -8,24 +8,30 @@
                  'history.js', 'warnings.js', 'custom-select.js', 'update-check.js'];
   const CHECK_MS = 5 * 60 * 1000;
 
-  // ลายนิ้วมือ = ETag/Last-Modified ของทุกไฟล์ (ขอแค่หัวไฟล์ HEAD ไม่โหลดเนื้อ ~360KB ทุก 5 นาที เปลืองเน็ตมือถือ)
-  // เซิร์ฟเวอร์ไม่ส่งหัวพวกนี้ = ค่อยโหลดเนื้อไฟล์มา hash แทน · ไฟล์ไหนโหลดไม่ได้ = ข้ามรอบนี้ ไม่เตือนมั่ว
+  // 23พ.ย.69 แก้แถบเด้งตลอด: GitHub Pages มีหลายเซิร์ฟเวอร์ เวลาไฟล์ (Last-Modified) ต่างกันได้ 1 วิ
+  // และ ETag ก็สร้างจากเวลานั้น (W/"6b000dd1-…" vs W/"6b000dd2-…") → เทียบตรงๆ = เจอ "ไฟล์เปลี่ยน" มั่วทุกรอบ
+  // วิธีใหม่: ต่อไฟล์เก็บ {เวลา, ขนาด} (ขนาด = ท้าย ETag) · ถือว่าเปลี่ยนเมื่อเวลาต่างกันเกิน 2 นาที หรือขนาดไม่เท่ากัน
+  // (push แต่ละรอบ deploy ห่างกันหลายนาทีเสมอ) · ขอแค่หัวไฟล์ HEAD ไม่โหลดเนื้อ ประหยัดเน็ตมือถือ
   // local=true → อ่านจาก cache ของเบราว์เซอร์ (= ไฟล์ที่หน้านี้น่าจะใช้อยู่) · false → ถามเซิร์ฟเวอร์ตรงๆ
+  const TOL_MS = 2 * 60 * 1000;
   async function stamp(f, local) {
     const r = await fetch(f, local ? { cache: 'force-cache' } : { method: 'HEAD', cache: 'no-store' });
     if (!r.ok) throw 0;
-    const tag = r.headers.get('etag') || r.headers.get('last-modified');
-    if (tag) return tag.replace(/^W\//, '');
-    const g = local ? r : await fetch(f, { cache: 'no-store' }); if (!g.ok) throw 0;
-    return g.text();
+    const lm = Date.parse(r.headers.get('last-modified') || '');
+    const et = (r.headers.get('etag') || '').replace(/^W\//, '').replace(/"/g, '');
+    const size = et.includes('-') ? et.split('-').pop() : (r.headers.get('content-length') || '');
+    return { t: isNaN(lm) ? null : lm, size };
   }
   async function fingerprint(local) {
-    try {
-      const texts = await Promise.all(FILES.map(f => stamp(f, local)));
-      let h = 0;
-      for (const ch of texts.join('\u0000')) h = (h * 31 + ch.charCodeAt(0)) | 0;
-      return String(h);
-    } catch { return null; }   // เน็ตหลุด/ออฟไลน์
+    try { return await Promise.all(FILES.map(f => stamp(f, local))); }
+    catch { return null; }   // เน็ตหลุด/ออฟไลน์/ไฟล์ไหนโหลดไม่ได้ = ข้ามรอบนี้ ไม่เตือนมั่ว
+  }
+  function changed(a, b) {
+    return a.some((x, i) => {
+      const y = b[i];
+      if (x.t !== null && y.t !== null && Math.abs(x.t - y.t) > TOL_MS) return true;
+      return !!(x.size && y.size && x.size !== y.size);
+    });
   }
 
   function css() {
@@ -77,7 +83,7 @@
     if (bar) return;
     if (current === null) { current = await fingerprint(true); if (!current) return; }
     const v = await fingerprint(false);
-    if (v && v !== current) show();
+    if (v && changed(current, v)) show();
   }
   check();
   setInterval(check, CHECK_MS);
