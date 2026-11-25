@@ -720,13 +720,25 @@ const type = combo.split('|')[1]; // รหัสชนิด เช่น SUN5 
   const sideAmt = 288 * h * gSide * q;
   const midAmt  = 540 * h * gMid;
   const gParts = [];
-  if (sideAmt > 0) gParts.push(`ไกด์ข้าง ${gSide} ฝั่ง${q>1?` × ${q} ชุด`:''} ${fmt(sideAmt)}`);
-  if (midAmt > 0)  gParts.push(`ไกด์กลาง ${gMid} ชิ้น ${fmt(midAmt)}`);
-  items.get(id).rollerGuide = gParts.length ? ` (รวม${gParts.join(' + ')})` : '';
+  if (sideAmt > 0) gParts.push(`ไกด์ข้าง ${gSide} ฝั่ง${q>1?` × ${q} ชุด`:''} ${fmt(sideAmt)} บาท`);
+  if (midAmt > 0)  gParts.push(`ไกด์กลาง ${gMid} ชิ้น ${fmt(midAmt)} บาท`);
 
-  const total = unitPrice * q + sideAmt + midAmt;
+  const base = unitPrice * q;
+  const total = base + sideAmt + midAmt;
+  // แยกราคาม่านกับรางไกด์ก่อน แล้วค่อยรวม (user ขอ 26พ.ย.69)
+  items.get(id).rollerBase = base;
+  // ราคารวมอยู่บรรทัดล่างสุด (user ขอ 26พ.ย.69)
+  items.get(id).rollerGuide = gParts.length ? gParts.map(g => `
++ ${g}`).join('') + `
+รวม ${fmt(total)} บาท` : '';
 
-  $(`#roller-price-${id}`).textContent = fmt(total) + ' บาท';
+  const pb = $(`#roller-price-${id}`);
+  pb.style.whiteSpace = 'pre-line';
+  pb.textContent = gParts.length
+    ? `ม่าน ${fmt(base)} บาท` + gParts.map(g => `
++ ${g}`).join('') + `
+รวม ${fmt(total)} บาท`
+    : fmt(total) + ' บาท';
 
   items.get(id).roller = total;
 }
@@ -2144,7 +2156,7 @@ if (st.roller > 0) {
   blindsAgg[key].entries.push({
     id,
     noVal: $(`#roller-valance-${id}`)?.checked === false,
-    line: `${w}*${h} = ${q} ชุด ${fmt(st.roller)} บาท${st.rollerGuide || ''}`,
+    line: `${w}*${h} = ${q} ชุด ${fmt(st.rollerGuide ? st.rollerBase : st.roller)} บาท${st.rollerGuide || ''}`,
     amt: Math.round(st.roller)
   });
 
